@@ -93,13 +93,14 @@ class LemonadeGymEnv(gym.Env):
         reward_shaping: bool = True,
         reward_shaping_scale: float = 0.1,
         use_mixed_actions: bool = False,
+        randomize_seed: bool = True,
     ):
         """
         Initialize the Gymnasium wrapper.
         
         Args:
             config: Game configuration (uses defaults if None)
-            seed: Random seed for reproducibility
+            seed: Random seed for reproducibility (used to seed the RNG for randomize_seed)
             render_mode: Render mode ("human" for text output, None for no rendering)
             max_invalid_actions: Max consecutive invalid actions before forcing a valid one
             reward_shaping: Enable dense reward shaping (default: True)
@@ -110,16 +111,26 @@ class LemonadeGymEnv(gym.Env):
                 - "location": Discrete(4) for location choice
                 - "upgrade": Discrete(2) for upgrade decision
                 If False, uses flat Box(8,) action space (compatible with all algorithms)
+            randomize_seed: If True, generate a new random seed each episode for better
+                generalization. If False, use the same seed every episode (for debugging
+                or reproducing specific scenarios). Default: True for training.
         """
         super().__init__()
         
         self.config = config or GameConfig()
         self._seed = seed
+        self._base_seed = seed  # Store original seed for RNG
         self.render_mode = render_mode
         self.max_invalid_actions = max_invalid_actions
         self.reward_shaping = reward_shaping
         self.reward_shaping_scale = reward_shaping_scale
         self.use_mixed_actions = use_mixed_actions
+        self.randomize_seed = randomize_seed
+        
+        # RNG for generating episode seeds (seeded by base_seed for reproducibility)
+        import random
+        self._seed_rng = random.Random(seed)
+        self._episode_count = 0
         
         # Create the underlying environment
         self._env = LemonadeEnvironment(config=self.config, seed=seed)
@@ -174,16 +185,33 @@ class LemonadeGymEnv(gym.Env):
         Reset the environment and return initial observation.
         
         Args:
-            seed: Optional seed to reset with (overrides constructor seed)
-            options: Additional options (unused)
+            seed: Optional seed to reset with (overrides constructor seed and randomize_seed)
+            options: Additional options. Supports:
+                - "seed": Override seed for this episode
+                - "randomize": Override randomize_seed setting for this episode
             
         Returns:
             Tuple of (observation, info dict)
         """
-        # Handle seeding
+        self._episode_count += 1
+        
+        # Determine the seed for this episode
         if seed is not None:
-            self._seed = seed
-            self._env = LemonadeEnvironment(config=self.config, seed=seed)
+            # Explicit seed passed - use it
+            episode_seed = seed
+        elif options and "seed" in options:
+            # Seed in options
+            episode_seed = options["seed"]
+        elif self.randomize_seed:
+            # Generate a new random seed for this episode
+            # This ensures the agent sees diverse weather patterns during training
+            episode_seed = self._seed_rng.randint(0, 2**31 - 1)
+        else:
+            # Use the fixed seed (same game every episode)
+            episode_seed = self._seed
+        
+        # Create new environment with this episode's seed
+        self._env = LemonadeEnvironment(config=self.config, seed=episode_seed)
         
         super().reset(seed=seed)
         
@@ -201,6 +229,8 @@ class LemonadeGymEnv(gym.Env):
         
         # Build info dict with raw observation data
         info = self._build_info(obs)
+        info["episode_seed"] = episode_seed  # Include seed in info for debugging
+        info["episode_number"] = self._episode_count
         
         if self.render_mode == "human":
             self._render_obs(obs, is_reset=True)
@@ -445,6 +475,7 @@ def make_env(
     reward_shaping: bool = True,
     reward_shaping_scale: float = 0.1,
     use_mixed_actions: bool = False,
+    randomize_seed: bool = True,
 ) -> LemonadeGymEnv:
     """
     Factory function for creating LemonadeGymEnv instances.
@@ -455,13 +486,15 @@ def make_env(
         envs = SyncVectorEnv([lambda i=i: make_env(seed=i) for i in range(8)])
     
     Args:
-        seed: Random seed
+        seed: Random seed (seeds the RNG for episode seed generation)
         config: Game configuration
         render_mode: Render mode
         max_invalid_actions: Max consecutive invalid actions before forcing valid one
         reward_shaping: Enable dense reward shaping (default: True)
         reward_shaping_scale: Scale factor for shaped rewards (default: 0.1)
         use_mixed_actions: Use mixed discrete/continuous action space (default: False)
+        randomize_seed: If True, each episode gets a new random seed for diverse
+            weather patterns. If False, same seed every episode. (default: True)
         
     Returns:
         LemonadeGymEnv instance
@@ -474,4 +507,5 @@ def make_env(
         reward_shaping=reward_shaping,
         reward_shaping_scale=reward_shaping_scale,
         use_mixed_actions=use_mixed_actions,
+        randomize_seed=randomize_seed,
     )

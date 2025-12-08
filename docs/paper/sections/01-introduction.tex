@@ -26,11 +26,11 @@ The lemonade stand domain is deliberately chosen for its \textbf{interpretabilit
 \paragraph{Contributions.} We make the following contributions:
 
 \begin{enumerate}
-    \item \textbf{A novel research finding on prompt-induced behavioral modulation}: We conduct the first systematic study showing that goal-framing prompts reliably alter LLM agent economic behavior, with effects comparable to [insert effect size once you have results]. This has direct implications for agent alignment and deployment.
+    \item \textbf{First systematic study of prompt-induced behavioral modulation in business contexts}: We demonstrate that goal-framing prompts (aggressive, conservative, competitive, survival, growth) reliably alter LLM agent economic behavior, with effects comparable to [insert effect size once you have results]. This has direct implications for agent alignment and deployment---showing that \emph{how} we frame objectives shapes agent behavior in predictable ways.
     
-    \item \textbf{A new benchmark environment}: LemonadeBench is a multi-day sequential business decision-making benchmark featuring compounding decisions, perishable inventory, stochastic weather, and delayed reputation feedback---properties absent from existing agent evaluations.
+    \item \textbf{Comprehensive architectural analysis}: We evaluate four agent loop structures (React, Plan-Act, Act-Reflect, Full) and three cognitive scaffolding approaches (calculator tools, math prompts, code interpreters) to identify which interventions improve long-horizon reasoning---the first such comparison in a business simulation context.
     
-    \item \textbf{Comprehensive architectural analysis}: We evaluate four agent loop structures (React, Plan-Act, Act-Reflect, Full) and three cognitive scaffolding approaches (calculator tools, math prompts, code interpreters) to identify which interventions improve long-horizon reasoning.
+    \item \textbf{A rich business simulation environment}: Building on the emerging space of multi-day business benchmarks (e.g., Vending-Bench \citep{backlund2025vendingbench}, retail simulations \citep{ovezmyradov2025aiplayingbusiness}), LemonadeBench contributes a simulation with richer dynamics: location-based risk/reward tradeoffs, perishable inventory with FIFO spoilage, weather-dependent demand, and a reputation system that creates delayed feedback loops.
     
     \item \textbf{Large-scale empirical study}: We evaluate 20 frontier models across 1,000 episodes with rigorous statistical analysis, establishing performance baselines and identifying failure modes.
     

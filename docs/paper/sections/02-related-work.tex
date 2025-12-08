@@ -7,9 +7,12 @@ The evaluation of LLM-based agents has expanded rapidly in 2024--2025. \textbf{A
 These benchmarks share a common structure: each task is an independent episode with binary success/failure outcomes. LemonadeBench differs by requiring \emph{sequential} decision-making where performance compounds across 14 days---early mistakes constrain late-game options, and recovery strategies matter.
 
 \paragraph{Economic and Business Simulation.}
-Recent work has explored LLMs in economic contexts. \textbf{Homo Silicus} \citep{horton2023llmeconomicagents} demonstrates that LLMs can serve as computational models of human economic behavior, replicating classic behavioral economics experiments. \textbf{PartnerMAS} \citep{li2025partnermas} uses multi-agent hierarchies for business partner selection in venture capital contexts. The \textbf{LLM Economist} \citep{karten2025llmeconomist} framework applies agent-based modeling to tax policy design using demographically realistic populations.
+Recent work has explored LLMs in economic contexts. \textbf{Homo Silicus} \citep{horton2023llmeconomicagents} demonstrates that LLMs can serve as computational models of human economic behavior, replicating classic behavioral economics experiments. \textbf{PartnerMAS} \citep{li2025partnermas} uses multi-agent hierarchies for business partner selection in venture capital contexts. The \textbf{LLM Economist} \citep{karten2025llmeconomist} framework applies agent-based modeling to tax policy design using demographically realistic populations. However, these focus on \emph{isolated decisions} or \emph{simulating human preferences} rather than operating a business over time.
 
-However, these benchmarks focus on \emph{isolated decisions} or \emph{simulating human preferences} rather than operating a business over time. LemonadeBench requires agents to \emph{run} a business---managing cash flow, inventory, and reputation across a season---rather than making one-shot economic judgments.
+\paragraph{Multi-Day Business Benchmarks.}
+Most relevant to our work are recent multi-day business simulations designed specifically for LLM evaluation. \textbf{Vending-Bench} \citep{backlund2025vendingbench} tasks agents with managing a vending machine over multiple days, making decisions about inventory, pricing, and fees---demonstrating that long-horizon coherence is a meaningful challenge for LLM agents. \citet{ovezmyradov2025aiplayingbusiness} introduce an open-access retail management simulator running a 12-month decision-making game with pricing, orders, and marketing decisions. These works establish that multi-day business simulation is a valuable testbed for LLM capabilities.
+
+LemonadeBench builds on this emerging research direction while contributing three distinct elements: (1) \textbf{richer game mechanics} including location-based risk/reward tradeoffs with different weather exposures, perishable inventory with FIFO spoilage tracking, and a reputation system creating delayed feedback; (2) \textbf{systematic study of LLM-specific factors} including goal-framing prompts, agent architectures, and cognitive scaffolding---aspects not examined in prior business benchmarks; and (3) \textbf{interpretability} through a domain (lemonade stand) where every action maps to intuitions humans universally understand, enabling qualitative analysis of agent reasoning.
 
 \paragraph{Long-Horizon Planning.}
 Sequential decision-making benchmarks have emerged to test planning capabilities. \textbf{PlanningArena} \citep{zheng2025planningarena} provides modular evaluation of planning dimensions including step execution and dependency accuracy, with GPT-4o achieving 56.5\% and DeepSeekV3 achieving 41.9\% on the benchmark. Other work has explored long-horizon sequential tasks in game environments, though these typically lack real-world interpretability.
@@ -37,7 +40,12 @@ AgentBench & Multi & Single & Partial & Low & No & No \\
 Homo Silicus & Economics & Single & No & High & No & No \\
 PlanningArena & Planning & Multi & Yes & Medium & Partial & No \\
 \midrule
+Vending-Bench & Business & Multi & Yes & Medium & Yes & No \\
+Retail Sim & Business & Multi (12mo) & Yes & Medium & Yes & No \\
+\midrule
 \textbf{LemonadeBench} & Business & Multi (14d) & Yes & High & Yes & \textbf{Yes} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+The key differentiator for LemonadeBench is not the multi-day business format itself---which Vending-Bench and retail simulators have established as valuable---but rather the \emph{systematic investigation of LLM-specific factors}: how goal framing affects economic behavior, which agent architectures perform best over long horizons, and whether cognitive scaffolding (calculators, code interpreters) improves reasoning. These studies address gaps in prior work that focused primarily on task completion rates rather than understanding the factors that modulate LLM agent behavior.

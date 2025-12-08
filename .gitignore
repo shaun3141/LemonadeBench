@@ -45,3 +45,4 @@ examples/rl_solvers/models/
 
 # Model cache
 .model_limits_cache.json
+/mnt/c/Users/shaun/OneDrive/Documents/GitHub/LemonadeBench/examples/rl_models/lemonade_ppo_checkpoints

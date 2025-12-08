@@ -34,6 +34,8 @@ LemonadeBench evaluates AI agents on exactly this capability. Agents operate a l
 
 The lemonade stand domain is deliberately chosen for **interpretability**—every action maps to intuitions humans universally understand: "buy more lemons," "raise the price," "move to a busier location."
 
+**Building on prior work:** Multi-day business simulation is an emerging LLM evaluation paradigm. [Vending-Bench](https://arxiv.org/abs/2502.15840) and [retail management simulators](https://arxiv.org/abs/2509.26331) have established this as a valuable testbed. LemonadeBench extends this direction with richer game mechanics (location selection, perishable inventory, reputation systems) and—critically—systematic studies of *how* LLMs behave: goal-framing effects, architecture comparisons, and cognitive scaffolding analysis.
+
 ---
 
 ## 📄 Research Paper
@@ -44,13 +46,13 @@ The lemonade stand domain is deliberately chosen for **interpretability**—ever
 
 ### Key Contributions
 
-1. **Novel Benchmark** — Multi-day sequential business decision-making with compounding decisions, perishable inventory, stochastic weather, and delayed reputation feedback
+1. **Goal-Framing Study** — First systematic study of how motivational prompts (aggressive, conservative, competitive, survival, growth) affect LLM economic behavior—revealing whether prompt engineering can modulate agent risk tolerance, pricing aggression, and strategic planning
 
-2. **Goal-Framing Study** — First systematic study of how motivational prompts (aggressive, conservative, competitive, survival, growth) affect LLM economic behavior
+2. **Architecture Comparison** — Comprehensive evaluation of four agent loop structures (ReAct, Plan-Act, Act-Reflect, Full) to determine if explicit planning or reflection improves long-horizon business performance
 
-3. **Architecture Comparison** — Evaluation of four agent loop structures (ReAct, Plan-Act, Act-Reflect, Full) to determine if explicit planning or reflection improves long-horizon performance
+3. **Cognitive Scaffolding Analysis** — Systematic testing of whether calculator tools, math encouragement prompts, or code interpreters improve agent reasoning in economic contexts
 
-4. **Cognitive Scaffolding Analysis** — Testing whether calculator tools, math encouragement prompts, or code interpreters improve agent reasoning
+4. **Rich Business Simulation** — Multi-day sequential decision-making with compounding effects, perishable inventory, stochastic weather, location-based risk/reward tradeoffs, and delayed reputation feedback—extending prior business simulation benchmarks like [Vending-Bench](https://arxiv.org/abs/2502.15840) with richer game mechanics
 
 ### Experimental Design
 
