@@ -1,0 +1,233 @@
+# LemonadeBench Paper Methodology - Full Experimental Matrix
+#
+# This configuration reproduces the complete experimental methodology from the paper.
+# It includes all three experimental dimensions:
+#   1. Goal-Framing Study: 20 models × 6 conditions × 5 seeds = 600 episodes
+#   2. Architecture Ablation: 5 models × 4 architectures × 10 seeds = 200 episodes
+#   3. Scaffolding Ablation: 5 models × 4 scaffolds × 10 seeds = 200 episodes
+#
+# Total: 1000 episodes
+# Estimated cost: ~$50-80 (varies by model pricing)
+#
+# Run with: lemonade batch examples/paper_methodology.yaml --parallel 4
+#
+# For individual studies, use the dedicated config files:
+#   - goal_framing_experiment.yaml (600 episodes)
+#   - architecture_ablation.yaml (160 episodes)
+#   - scaffolding_ablation.yaml (160 episodes)
+
+name: "LemonadeBench Paper Methodology - Full Experimental Matrix"
+
+# =============================================================================
+# STUDY 1: GOAL-FRAMING EXPERIMENT
+# =============================================================================
+# Tests how motivational framing in prompts affects agent economic behavior.
+# All 20 models × 6 goal framings × 5 seeds = 600 episodes
+#
+# Goal framings tested:
+#   - baseline: No additional framing
+#   - aggressive: Risk-taking, maximize returns
+#   - conservative: Loss aversion, protect capital
+#   - competitive: Tournament framing, beat competitors
+#   - survival: Capital preservation priority
+#   - growth: Long-term learning focus
+
+experiment:
+  # Use OpenRouter for consistent API access across all providers
+  provider: openrouter
+  
+  # =========================================================================
+  # All 20 models from the December 2025 evaluation suite
+  # Ordered from cheapest to most expensive
+  # =========================================================================
+  models:
+    # Tier 5: Fast & Efficient ($0.075-4/M tokens) - 3 models
+    - google/gemini-2.0-flash-001
+    - openai/gpt-4o-mini
+    - anthropic/claude-3.5-haiku
+    
+    # Tier 3: Cost-Effective ($0.14-2.19/M tokens) - 4 models
+    - mistralai/mistral-small-3
+    - qwen/qwq-32b
+    - deepseek/deepseek-chat
+    - deepseek/deepseek-r1
+    
+    # Tier 4: Open Source ($0.20-2/M tokens) - 4 models
+    - meta-llama/llama-3.3-70b-instruct
+    - qwen/qwen-2.5-72b-instruct
+    - mistralai/mistral-large
+    - meta-llama/llama-3.1-405b-instruct
+    
+    # Tier 2: Balanced Performance ($1-6/M tokens) - 4 models
+    - google/gemini-2.5-flash
+    - openai/o3-mini
+    - x-ai/grok-2
+    - anthropic/claude-3.5-sonnet
+    
+    # Tier 1: Premium Reasoning ($1-15/M tokens) - 5 models
+    - google/gemini-3-pro
+    - anthropic/claude-sonnet-4
+    - openai/o1
+    - openai/gpt-5.1-chat
+    - anthropic/claude-opus-4.5
+  
+  # 5 seeds for reproducibility (same as batch_config.yaml)
+  seeds: [1, 42, 100, 7, 2025]
+  
+  # All 6 goal-framing conditions from Section 4.4
+  goal_framings:
+    - baseline      # No additional framing
+    - aggressive    # Risk-taking, maximize returns
+    - conservative  # Loss aversion, protect capital
+    - competitive   # Tournament framing, beat competitors
+    - survival      # Capital preservation priority
+    - growth        # Long-term learning focus
+  
+  # Default architecture for goal-framing study
+  architectures: [react]
+  
+  # No additional scaffolding for goal-framing study
+  scaffoldings: [none]
+
+# =============================================================================
+# STUDY 2: ARCHITECTURE ABLATION
+# =============================================================================
+# Tests how agent loop structure affects performance.
+# 5 representative models × 4 architectures × 10 seeds = 200 episodes
+#
+# Architectures tested:
+#   - react: Observe → Decide → Act (baseline)
+#   - plan_act: Observe → Plan → Decide → Act
+#   - act_reflect: Observe → Decide → Act → Reflect
+#   - full: Plan → Decide → Act → Reflect
+
+architecture_ablation:
+  # 5 representative models (one from each major tier, using latest flagships)
+  models:
+    - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship (Nov 2025)
+    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship (Dec 2025)
+    - google/gemini-3-pro            # Tier 1: Google flagship (Dec 2025)
+    - deepseek/deepseek-chat           # Tier 3: DeepSeek flagship (Dec 2025)
+    - meta-llama/llama-3.3-70b-instruct  # Tier 4: Open source leader
+  
+  # 10 seeds for statistical power on ablation comparisons
+  seeds: [1, 2, 3, 42, 100, 7, 2025, 123, 456, 789]
+  
+  # All 4 architectures from Section 4.2
+  architectures:
+    - react         # Baseline: Observe → Decide → Act
+    - plan_act      # Planning: Observe → Plan → Decide → Act
+    - act_reflect   # Reflection: Observe → Decide → Act → Reflect
+    - full          # Combined: Plan → Decide → Act → Reflect
+  
+  # Hold goal framing constant
+  goal_framings: [baseline]
+  
+  # No additional scaffolding
+  scaffoldings: [none]
+
+# =============================================================================
+# STUDY 3: SCAFFOLDING ABLATION
+# =============================================================================
+# Tests how cognitive tools affect agent reasoning.
+# 5 representative models × 4 scaffoldings × 10 seeds = 200 episodes
+#
+# Scaffoldings tested:
+#   - none: No additional scaffolding (baseline)
+#   - calculator: Calculator tool for arithmetic
+#   - math_prompt: Math encouragement prompt
+#   - code_interpreter: Python code execution
+
+scaffolding_ablation:
+  # Same 5 representative models as architecture ablation (latest flagships)
+  models:
+    - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship (Nov 2025)
+    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship (Dec 2025)
+    - google/gemini-3-pro            # Tier 1: Google flagship (Dec 2025)
+    - deepseek/deepseek-chat           # Tier 3: DeepSeek flagship (Dec 2025)
+    - meta-llama/llama-3.3-70b-instruct  # Tier 4: Open source leader
+  
+  # 10 seeds for statistical power
+  seeds: [1, 2, 3, 42, 100, 7, 2025, 123, 456, 789]
+  
+  # All 4 scaffolding conditions from Section 4.3
+  scaffoldings:
+    - none              # No additional scaffolding (baseline)
+    - calculator        # Calculator tool for arithmetic
+    - math_prompt       # Math encouragement prompt
+    - code_interpreter  # Python code execution
+  
+  # Hold architecture and goal framing constant
+  architectures: [react]
+  goal_framings: [baseline]
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+logging:
+  local: true       # Save runs to local filesystem
+  supabase: true    # Also log to Supabase (if configured)
+  dir: ./runs/paper_methodology
+
+# =============================================================================
+# EXPERIMENTAL MATRIX SUMMARY
+# =============================================================================
+#
+# Study 1 - Goal Framing:
+#   20 models × 6 conditions × 5 seeds = 600 episodes
+#   Key questions:
+#     - Does aggressive framing increase risk-taking?
+#     - Does conservative framing reduce spoilage?
+#     - Does competitive framing change pricing behavior?
+#
+# Study 2 - Architecture Ablation:
+#   5 models × 4 architectures × 10 seeds = 200 episodes
+#   Key questions:
+#     - Does explicit planning improve inventory management?
+#     - Does reflection improve second-half performance?
+#     - Is the full architecture worth 3× API cost?
+#
+# Study 3 - Scaffolding Ablation:
+#   5 models × 4 scaffoldings × 10 seeds = 200 episodes
+#   Key questions:
+#     - Does calculator access reduce pricing errors?
+#     - Does math prompting improve performance without tools?
+#     - Is code interpreter utilized or underutilized?
+#
+# TOTAL: 1000 episodes
+#
+# =============================================================================
+# MODEL TIERS (for reference)
+# =============================================================================
+#
+# Tier 1 - Premium ($1-15/M tokens):
+#   1. anthropic/claude-sonnet-4        - Best all-around agentic
+#   2. anthropic/claude-opus-4.5        - Best long autonomous tasks (Nov 2025)
+#   3. openai/o1                        - Strong reasoning
+#   4. openai/gpt-5.1-chat              - OpenAI flagship (Dec 2025)
+#   5. google/gemini-3-pro              - Top multimodal (Dec 2025)
+#
+# Tier 2 - Balanced ($1-6/M tokens):
+#   6. anthropic/claude-3.5-sonnet      - Great value
+#   7. openai/o3-mini                   - Efficient reasoning
+#   8. google/gemini-2.5-flash          - Fast + capable
+#   9. x-ai/grok-2                      - Alternative frontier
+#
+# Tier 3 - Value ($0.14-2.19/M tokens):
+#   10. deepseek/deepseek-r1            - Best value reasoning
+#   11. deepseek/deepseek-chat            - Latest flagship, rivals GPT-5 (Dec 2025)
+#   12. qwen/qwq-32b                    - Reasoning specialist
+#   13. mistralai/mistral-small-3       - Fast & cheap
+#
+# Tier 4 - Open Source ($0.20-2/M tokens):
+#   14. meta-llama/llama-3.3-70b        - Open source leader
+#   15. meta-llama/llama-3.1-405b       - Largest open model
+#   16. qwen/qwen-2.5-72b-instruct      - Strong multilingual
+#   17. mistralai/mistral-large         - European alternative
+#
+# Tier 5 - Fast ($0.075-4/M tokens):
+#   18. anthropic/claude-3.5-haiku      - Fast + smart
+#   19. openai/gpt-4o-mini              - Very fast
+#   20. google/gemini-2.0-flash-001     - Speed champion
+#
+# =============================================================================

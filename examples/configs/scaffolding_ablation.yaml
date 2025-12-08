@@ -1,0 +1,47 @@
+# LemonadeBench Scaffolding Ablation Study
+#
+# This configuration tests how cognitive scaffolding tools affect performance,
+# as described in Section 4.3 of the paper.
+#
+# Run with: lemonade batch examples/scaffolding_ablation.yaml --parallel 4
+#
+# The experimental matrix generates all combinations of:
+#   4 models × 10 seeds × 4 scaffoldings = 160 episodes
+
+name: "Cognitive Scaffolding Ablation Study"
+
+experiment:
+  # Use OpenRouter for consistent API access across all providers
+  provider: openrouter
+  
+  # Representative models from different tiers
+  models:
+    - anthropic/claude-sonnet-4   # Premium
+    - openai/gpt-4o               # Premium
+    - deepseek/deepseek-r1        # Value/Reasoning
+    - meta-llama/llama-3.3-70b-instruct  # Open source
+  
+  # More seeds for statistical power
+  seeds: [1, 2, 3, 42, 100, 7, 2025, 123, 456, 789]
+  
+  # All scaffolding conditions from Section 4.3
+  scaffoldings:
+    - none              # No additional scaffolding (baseline)
+    - calculator        # Calculator tool for arithmetic
+    - math_prompt       # Math encouragement prompt
+    - code_interpreter  # Python code execution
+  
+  # Hold architecture and goal framing constant
+  architectures: [react]
+  goal_framings: [baseline]
+
+logging:
+  local: true
+  supabase: true
+  dir: ./runs/scaffolding_study
+
+# Key questions this study addresses:
+# 1. Does calculator access reduce pricing errors?
+# 2. Does math prompt improve performance without external tools?
+# 3. Is code interpreter utilized, or underutilized?
+# 4. What's the accuracy of agent calculations with/without tools?

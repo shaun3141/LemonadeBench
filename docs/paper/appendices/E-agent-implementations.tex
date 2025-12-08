@@ -1,0 +1,170 @@
+\section{Agent Loop Implementations}
+\label{app:loops}
+
+We provide detailed pseudocode for each agent architecture to ensure reproducibility.
+
+\subsection{\textsc{React} (Baseline)}
+
+\begin{verbatim}
+def run_episode(env, llm):
+    obs = env.reset()
+    messages = [format_observation(obs)]
+    
+    while not obs.done:
+        response = llm.generate(messages, tools=[ACTION_TOOL])
+        action = parse_action(response)
+        obs = env.step(action)
+        messages.append(response)
+        messages.append(format_result(obs))
+    
+    return obs.total_profit
+\end{verbatim}
+
+\subsection{\textsc{Plan-Act}}
+
+\begin{verbatim}
+PLANNING_PROMPT = """
+Before taking action, create a plan for the next 3-5 days:
+1. Weather outlook and expected demand
+2. Inventory needs and purchase schedule
+3. Pricing strategy by weather condition
+4. Location considerations
+5. Key risks and contingencies
+
+Output your plan, then take today's action.
+"""
+
+def run_episode(env, llm):
+    obs = env.reset()
+    messages = [format_observation(obs)]
+    
+    while not obs.done:
+        # Planning phase
+        plan_prompt = PLANNING_PROMPT + format_observation(obs)
+        plan_response = llm.generate(messages + [plan_prompt])
+        
+        # Action phase (with plan context)
+        action_prompt = f"Given your plan:\n{plan_response}\n\nNow take action:"
+        response = llm.generate(
+            messages + [plan_response, action_prompt], 
+            tools=[ACTION_TOOL]
+        )
+        action = parse_action(response)
+        obs = env.step(action)
+        
+        messages.extend([plan_response, response, format_result(obs)])
+    
+    return obs.total_profit
+\end{verbatim}
+
+\subsection{\textsc{Act-Reflect}}
+
+\begin{verbatim}
+REFLECTION_PROMPT = """
+Reflect on yesterday's results:
+1. What worked well?
+2. What could you have done better?
+3. What surprised you?
+4. What will you do differently?
+
+Then decide today's action.
+"""
+
+def run_episode(env, llm):
+    obs = env.reset()
+    messages = [format_observation(obs)]
+    
+    while not obs.done:
+        # Action phase
+        response = llm.generate(messages, tools=[ACTION_TOOL])
+        action = parse_action(response)
+        obs = env.step(action)
+        messages.append(response)
+        
+        if not obs.done:
+            # Reflection phase
+            reflect_prompt = format_result(obs) + REFLECTION_PROMPT
+            reflection = llm.generate(messages + [reflect_prompt])
+            messages.extend([reflect_prompt, reflection])
+        
+        messages.append(format_observation(obs))
+    
+    return obs.total_profit
+\end{verbatim}
+
+\subsection{\textsc{Full} (Plan + Reflect)}
+
+\begin{verbatim}
+def run_episode(env, llm):
+    obs = env.reset()
+    messages = [format_observation(obs)]
+    current_plan = None
+    
+    while not obs.done:
+        # Planning phase (every turn or when plan invalidated)
+        plan_prompt = PLANNING_PROMPT + format_observation(obs)
+        if current_plan:
+            plan_prompt += f"\nPrevious plan: {current_plan}\nUpdate if needed."
+        current_plan = llm.generate(messages + [plan_prompt])
+        
+        # Action phase
+        action_prompt = f"Execute your plan:\n{current_plan}"
+        response = llm.generate(
+            messages + [current_plan, action_prompt],
+            tools=[ACTION_TOOL]
+        )
+        action = parse_action(response)
+        obs = env.step(action)
+        
+        if not obs.done:
+            # Reflection phase
+            reflect_prompt = format_result(obs) + REFLECTION_PROMPT
+            reflect_prompt += f"\nDoes your plan still make sense? Plan: {current_plan}"
+            reflection = llm.generate(messages + [reflect_prompt])
+            messages.extend([current_plan, response, reflect_prompt, reflection])
+        
+        messages.append(format_observation(obs))
+    
+    return obs.total_profit
+\end{verbatim}
+
+\subsection{Tool Definitions}
+
+\subsubsection{Calculator Tool}
+\begin{verbatim}
+{
+  "name": "calculate",
+  "description": "Evaluate a mathematical expression. Use for profit 
+                  calculations, demand estimates, break-even analysis.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "expression": {
+        "type": "string",
+        "description": "Math expression, e.g., '(50 * 0.75) - (12 * 0.25)'"
+      }
+    },
+    "required": ["expression"]
+  }
+}
+\end{verbatim}
+
+\subsubsection{Code Interpreter Tool}
+\begin{verbatim}
+{
+  "name": "run_python",
+  "description": "Execute Python code. Use for complex calculations,
+                  optimization, or data analysis.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "Python code to execute. Has access to numpy, scipy."
+      }
+    },
+    "required": ["code"]
+  }
+}
+\end{verbatim}
+

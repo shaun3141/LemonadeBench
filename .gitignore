@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+.uv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+
+# Outputs
+outputs/
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+/runs
+
+# RL model outputs
+examples/rl_solvers/models/
+
+# Model cache
+.model_limits_cache.json

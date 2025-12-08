@@ -1,0 +1,117 @@
+\section{Prompt Templates}
+\label{app:prompts}
+
+We use structured tool calling with Claude's native \texttt{tool\_use} feature. The system prompt and observation format are shown below.
+
+\subsection{System Prompt}
+
+\begin{verbatim}
+You are an AI agent running a lemonade stand business. 
+Your goal is to maximize profit over a 14-day summer season.
+
+## Game Mechanics
+
+**Weather Effects on Demand:**
+- HOT: Very high demand, customers willing to pay premium prices
+- SUNNY: High demand, good day for sales
+- CLOUDY: Moderate demand
+- RAINY: Low demand, few customers venture out
+- STORMY: Very low demand
+
+**Pricing Strategy:**
+- Higher prices = fewer customers but more profit per sale
+- Lower prices = more customers but less profit per sale
+- The "sweet spot" is usually around $0.50-$1.00 depending on weather
+
+**Inventory:**
+- Lemons: $0.25 each, expire after 3 days
+- Sugar bags: $0.50 each, don't expire
+- Cups: $0.05 each, don't expire
+- Ice: $0.25/bag, melts overnight unless you have a cooler
+
+**Recipe per cup:**
+- 0.25 lemons (4 cups per lemon)
+- 0.1 sugar bags (10 cups per bag)
+- 0.2 ice bags (5 cups per bag) - optional but boosts hot day sales
+
+## Strategy Tips
+1. Watch the weather forecast to plan inventory
+2. Don't overbuy perishables (lemons, ice)
+3. Higher prices on hot/sunny days, lower on bad weather
+4. Build reputation by serving customers well
+5. Advertising helps on good weather days
+\end{verbatim}
+
+\subsection{Observation Format}
+
+Each turn, the agent receives a structured observation:
+
+\begin{verbatim}
+# Day 3 Results
+
+## Current Conditions
+- Weather: HOT (98°F)
+- Tomorrow's Forecast: sunny
+- Days Remaining: 11
+
+## Finances
+- Cash: $24.50
+- Total Profit So Far: $4.50
+
+## Yesterday's Results
+- Cups Sold: 45
+- Revenue: $33.75
+- Costs: $8.25
+- Daily Profit: $25.50
+- Customers Served: 45
+- Customers Turned Away: 12
+
+## Current Inventory
+- Lemons: 8 (expiring tomorrow: 3)
+- Sugar Bags: 4.5
+- Cups: 42
+- Ice Bags: 0
+
+## Stand Status
+- Location: park
+- Owned Upgrades: None
+- Reputation: 0.58
+\end{verbatim}
+
+\subsection{Action Tool Schema}
+
+\begin{verbatim}
+{
+  "name": "take_action",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "reasoning": {
+        "type": "string",
+        "description": "Brief explanation of your strategy"
+      },
+      "price_per_cup": {
+        "type": "integer",
+        "description": "Price in cents (e.g., 75 = $0.75)"
+      },
+      "buy_lemons": {"type": "integer", "default": 0},
+      "buy_sugar": {"type": "integer", "default": 0},
+      "buy_cups": {"type": "integer", "default": 0},
+      "buy_ice": {"type": "integer", "default": 0},
+      "advertising_spend": {"type": "integer", "default": 0},
+      "buy_upgrade": {
+        "type": "string",
+        "enum": ["cooler", null]
+      },
+      "location": {
+        "type": "string",
+        "enum": ["park", "downtown", "mall", "pool", null]
+      }
+    },
+    "required": ["reasoning", "price_per_cup"]
+  }
+}
+\end{verbatim}
+
+The \texttt{reasoning} field captures agent chain-of-thought, enabling qualitative analysis of decision-making patterns. All runs log the full conversation history, actions, and outcomes for post-hoc analysis.
+

@@ -1,0 +1,43 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{LLM Agent Benchmarks.}
+The evaluation of LLM-based agents has expanded rapidly in 2024--2025. \textbf{AgentBench} \citep{liu2023agentbench} provides a multi-domain framework assessing planning, tool use, and self-reflection across eight environments. \textbf{SWE-bench} \citep{jimenez2024swebench} evaluates software engineering capabilities by tasking agents with resolving real GitHub issues; state-of-the-art agents achieve approximately 20\% success rates on the full benchmark and 43\% on the human-verified SWE-bench Lite subset as of late 2024. \textbf{WebArena} \citep{zhou2024webarena} and its successor \textbf{WebChoreArena} test web navigation through realistic browser interactions, with tasks requiring multi-page memory and complex calculations. \textbf{AgentGym} \citep{xi2024agentgym} offers a modular framework spanning 14 environments for training agents across diverse tasks with standardized HTTP interfaces.
+
+These benchmarks share a common structure: each task is an independent episode with binary success/failure outcomes. LemonadeBench differs by requiring \emph{sequential} decision-making where performance compounds across 14 days---early mistakes constrain late-game options, and recovery strategies matter.
+
+\paragraph{Economic and Business Simulation.}
+Recent work has explored LLMs in economic contexts. \textbf{Homo Silicus} \citep{horton2023llmeconomicagents} demonstrates that LLMs can serve as computational models of human economic behavior, replicating classic behavioral economics experiments. \textbf{PartnerMAS} \citep{li2025partnermas} uses multi-agent hierarchies for business partner selection in venture capital contexts. The \textbf{LLM Economist} \citep{karten2025llmeconomist} framework applies agent-based modeling to tax policy design using demographically realistic populations.
+
+However, these benchmarks focus on \emph{isolated decisions} or \emph{simulating human preferences} rather than operating a business over time. LemonadeBench requires agents to \emph{run} a business---managing cash flow, inventory, and reputation across a season---rather than making one-shot economic judgments.
+
+\paragraph{Long-Horizon Planning.}
+Sequential decision-making benchmarks have emerged to test planning capabilities. \textbf{PlanningArena} \citep{zheng2025planningarena} provides modular evaluation of planning dimensions including step execution and dependency accuracy, with GPT-4o achieving 56.5\% and DeepSeekV3 achieving 41.9\% on the benchmark. Other work has explored long-horizon sequential tasks in game environments, though these typically lack real-world interpretability.
+
+LemonadeBench occupies a middle ground: episodes are short enough for tractable evaluation (14 steps) yet long enough for meaningful strategy emergence. Unlike abstract games, every action has real-world interpretability (``buy lemons,'' ``raise price''), enabling qualitative analysis of failures.
+
+\paragraph{Reinforcement Learning Environments.}
+The RL community has developed extensive environment suites, from OpenAI Gym to more recent frameworks for specific domains. These focus primarily on \emph{training} RL agents through trial-and-error learning, whereas LemonadeBench is designed for \emph{evaluating} pre-trained LLMs without fine-tuning---testing whether models can apply general reasoning to novel domains based solely on instructions and feedback.
+
+\paragraph{Positioning LemonadeBench.}
+Table~\ref{tab:comparison} summarizes how LemonadeBench relates to existing benchmarks. A key distinction is that LemonadeBench systematically examines prompt engineering effects (goal-framing) on agent behavior, whereas other benchmarks focus solely on task success rates.
+
+\begin{table}[h]
+\centering
+\caption{Comparison with Related Benchmarks}
+\label{tab:comparison}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Benchmark} & \textbf{Domain} & \textbf{Horizon} & \textbf{Stochastic} & \textbf{Interpretable} & \textbf{Compounding} & \textbf{Prompt Test} \\
+\midrule
+SWE-bench & Code & Single & No & Medium & No & No \\
+WebArena & Web & Single & No & Low & No & No \\
+AgentBench & Multi & Single & Partial & Low & No & No \\
+Homo Silicus & Economics & Single & No & High & No & No \\
+PlanningArena & Planning & Multi & Yes & Medium & Partial & No \\
+\midrule
+\textbf{LemonadeBench} & Business & Multi (14d) & Yes & High & Yes & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}

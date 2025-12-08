@@ -1,0 +1,68 @@
+\documentclass[11pt]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{natbib}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{subcaption}
+\usepackage{microtype}
+\usepackage{enumitem}
+
+% Page setup
+\usepackage[margin=1in]{geometry}
+
+% Title and authors
+\title{LemonadeBench: A Dynamic Benchmark for Evaluating AI Agent Decision-Making in Simulated Business Environments}
+
+\author{
+  Shaun Van Weelden \\
+  % Institution \\
+  \texttt{shaun.t.vanweelden@gmail.com}
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Existing benchmarks for evaluating Large Language Model (LLM) agents---such as SWE-bench for code, WebArena for web navigation, and AgentBench for general reasoning---predominantly test single-session task completion or static decision-making. This gap is critical: real-world deployment contexts---from supply chain optimization to financial trading---require agents to maintain coherent strategies across extended time horizons where early mistakes compound into late-game constraints. We introduce \textbf{LemonadeBench}, a novel benchmark for evaluating LLM agent capabilities in \emph{multi-day sequential business decision-making} under uncertainty. Unlike existing economic benchmarks that probe isolated choices or simulate human preferences, LemonadeBench requires agents to operate a lemonade stand business over a 14-day season, making daily decisions about pricing, inventory procurement, location selection, and capital allocation---all while managing perishable goods, stochastic weather patterns, and a customer reputation system with delayed feedback dynamics.
+
+Our benchmark features several properties absent from current agent evaluations: (1) \textbf{interpretable actions} requiring no domain expertise---decisions like ``buy 10 lemons'' or ``raise price to \$0.75'' can be evaluated by non-experts, unlike abstract RL actions or complex code edits; (2) \textbf{multi-factor optimization} across six interacting systems (weather, pricing, demand, perishables, locations, upgrades); (3) \textbf{compounding decisions} where day-1 choices constrain day-14 possibilities through inventory, cash flow, and reputation; and (4) \textbf{deterministic seeding} for reproducible scientific evaluation. The environment runs in milliseconds per step, enabling large-scale model comparison.
+
+Beyond standard model comparison, we make a novel contribution by systematically investigating how \textbf{goal-framing prompts} shape agent economic behavior---testing whether motivational language (aggressive, conservative, competitive) induces measurable behavioral shifts analogous to those observed in human behavioral economics. We also examine \textbf{agent architectures} (comparing simple reactive loops against explicit planning and reflection phases) and \textbf{cognitive scaffolding} (whether calculator tools, math encouragement prompts, or code interpreters improve reasoning). Across 960 episodes with six frontier models, we find that [key finding about framing], [key finding about architecture], and [key finding about scaffolding]. Our findings reveal systematic behavioral patterns across models and provide actionable insights for practitioners deploying LLM agents in economic decision-making contexts, while raising important questions about the alignment between stated objectives and emergent agent behavior. LemonadeBench provides an intuitive, fast, and scientifically rigorous testbed for developing agents capable of sustained economic reasoning.
+\end{abstract>
+
+% Main sections
+\input{sections/01-introduction}
+\input{sections/02-related-work}
+\input{sections/03-environment}
+\input{sections/04-methodology}
+\input{sections/05-experiments}
+\input{sections/06-results}
+\input{sections/07-discussion}
+\input{sections/08-conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+% Appendices
+\appendix
+\input{appendices/A-environment-details}
+\input{appendices/B-prompt-templates}
+\input{appendices/C-model-versions}
+\input{appendices/D-goal-framing}
+\input{appendices/E-agent-implementations}
+\input{appendices/F-sample-reasoning}
+\input{appendices/G-reproducibility}
+
+\end{document}
+

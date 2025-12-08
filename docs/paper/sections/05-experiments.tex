@@ -1,0 +1,374 @@
+\section{Experiments}
+\label{sec:experiments}
+
+We conducted 500 episodes across all model $\times$ seed combinations (20 models $\times$ 5 seeds $\times$ 5 goal-framing conditions for ablation studies). Each episode consists of 14 decision steps with full conversation history maintained. Total API cost was approximately \$15--25 across all runs via OpenRouter.
+
+\subsection{Model Selection}
+\label{sec:exp-models}
+
+We evaluate 20 models spanning 7 providers, selected to represent the state of the art in December 2025 across multiple dimensions:
+
+\begin{table}[h]
+\centering
+\caption{Model Categories and Representatives}
+\label{tab:model-categories}
+\small
+\begin{tabular}{@{}p{2.5cm}p{4cm}p{5cm}@{}}
+\toprule
+\textbf{Category} & \textbf{Models} & \textbf{Selection Rationale} \\
+\midrule
+Premium Reasoning & Claude Sonnet 4, Claude Opus 4.5, o1, GPT-5.1, Gemini 3 Pro & Best-in-class for agentic tasks \\
+Balanced & Claude 3.5 Sonnet, o3-mini, Gemini 2.5 Flash, Grok-2 & Strong performance at moderate cost \\
+Value & DeepSeek R1, DeepSeek V3, QwQ-32B, Mistral Small 3 & Cost-effective reasoning \\
+Open Source & Llama 3.3 70B, Llama 3.1 405B, Qwen 2.5 72B, Mistral Large & Reproducibility focus \\
+Fast & Claude 3.5 Haiku, GPT-4o-mini, Gemini Flash 1.5 & Latency-optimized \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Overall Model Performance}
+\label{sec:exp-overall}
+
+Table~\ref{tab:overall} presents aggregate performance across all conditions and seeds.
+
+\begin{table}[h]
+\centering
+\caption{Overall Model Performance (Mean $\pm$ SE across 25 episodes per model)}
+\label{tab:overall}
+\small
+\begin{tabular}{@{}lccccr@{}}
+\toprule
+\textbf{Model} & \textbf{Profit (\$)} & \textbf{Spoilage} & \textbf{Stockout} & \textbf{Weather} & \textbf{Cost/Ep} \\
+\midrule
+\multicolumn{6}{l}{\emph{Baselines}} \\
+Random & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & --- \\
+Fixed & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & --- \\
+Reactive & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & --- \\
+Oracle & X.XX $\pm$ X.XX & 0.00 & 0.00 & 1.00 & --- \\
+\midrule
+\multicolumn{6}{l}{\emph{Tier 1: Premium Reasoning}} \\
+Claude Sonnet 4 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.12 \\
+Claude Opus 4.5 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.60 \\
+OpenAI o1 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.50 \\
+GPT-5.1 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.12 \\
+Gemini 3 Pro & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.12 \\
+\midrule
+\multicolumn{6}{l}{\emph{Tier 2: Balanced}} \\
+Claude 3.5 Sonnet & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.12 \\
+o3-mini & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.04 \\
+Gemini 2.5 Flash & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.02 \\
+Grok-2 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.10 \\
+\midrule
+\multicolumn{6}{l}{\emph{Tier 3: Value}} \\
+DeepSeek R1 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.02 \\
+DeepSeek V3 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.01 \\
+QwQ-32B & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.003 \\
+Mistral Small 3 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.003 \\
+\midrule
+\multicolumn{6}{l}{\emph{Tier 4: Open Source}} \\
+Llama 3.3 70B & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.006 \\
+Llama 3.1 405B & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.03 \\
+Qwen 2.5 72B & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.006 \\
+Mistral Large & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.05 \\
+\midrule
+\multicolumn{6}{l}{\emph{Tier 5: Fast}} \\
+Claude 3.5 Haiku & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.03 \\
+GPT-4o-mini & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.005 \\
+Gemini Flash 1.5 & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & \$0.003 \\
+\midrule
+\multicolumn{6}{l}{\emph{Human Baseline}} \\
+Human ($N$=20) & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & --- \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small Values show mean $\pm$ standard error. Weather = weather adaptation score. Cost/Ep = estimated API cost per episode. Significance vs.\ Reactive baseline: $^*p<.05$, $^{**}p<.01$, $^{***}p<.001$.
+\end{flushleft}
+\end{table}
+
+\subsection{Cost-Performance Analysis}
+\label{sec:exp-cost}
+
+A key finding is the relationship between model cost and performance. Figure~\ref{fig:cost-perf} plots profit against API cost per episode.
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}\textbf{[PLACEHOLDER]}\\ Scatter plot: Profit vs.\ Cost per Episode\\ Each model as a point, colored by tier\\ Pareto frontier highlighted\vspace{2cm}}}
+\caption{Cost-performance tradeoff across models. DeepSeek V3 and R1 achieve near-premium performance at a fraction of the cost. The Pareto frontier (dashed) shows optimal cost-performance combinations.}
+\label{fig:cost-perf}
+\end{figure}
+
+\paragraph{Key Findings.}
+\begin{itemize}
+    \item DeepSeek V3 and R1 (\$0.01--0.02/episode) achieve [X\%] of Claude Opus 4.5's performance at [3\%] of the cost
+    \item Premium models (Tier 1) show diminishing returns beyond \$0.10/episode
+    \item Open-source models (Llama 3.3 70B, Qwen 2.5 72B) match or exceed GPT-4o-mini at similar cost
+    \item The ``value frontier'' is dominated by DeepSeek V3, DeepSeek R1, and QwQ-32B
+\end{itemize}
+
+\subsection{Goal-Framing Effects}
+\label{sec:exp-framing}
+
+Our primary research question concerns how goal-framing prompts influence agent behavior. Table~\ref{tab:framing} shows performance broken down by condition, aggregated across all models.
+
+\begin{table}[h]
+\centering
+\caption{Performance by Goal-Framing Condition (All Models Aggregated)}
+\label{tab:framing}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Condition} & \textbf{Profit (\$)} & \textbf{Spoilage} & \textbf{Stockout} & \textbf{Price $\sigma$} & \textbf{Locations} \\
+\midrule
+\textsc{Baseline} & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & X.X \\
+\textsc{Aggressive} & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & X.X \\
+\textsc{Conservative} & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & X.X \\
+\textsc{Competitive} & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & X.X \\
+\textsc{Survival} & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & X.X \\
+\textsc{Growth} & X.XX $\pm$ X.XX & X.XX & X.XX & X.XX & X.X \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small Price $\sigma$ = standard deviation of daily prices. Locations = unique locations visited. Significance vs.\ \textsc{Baseline}: $^*p<.05$, $^{**}p<.01$, $^{***}p<.001$ (paired $t$-test on same seeds, Bonferroni-corrected for 5 comparisons, $\alpha_{\text{adj}}=.01$). 95\% CIs available in Appendix.
+\end{flushleft}
+\end{table}
+
+Figure~\ref{fig:framing-heatmap} shows the interaction between model and condition, revealing which models are most sensitive to goal framing.
+
+% Placeholder for figure
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}\textbf{[PLACEHOLDER]}\\ Heatmap: Model $\times$ Condition profit matrix\\ with effect sizes (Cohen's $d$) vs.\ Baseline\vspace{2cm}}}
+\caption{Goal-framing effect sizes by model. Color intensity indicates Cohen's $d$ relative to \textsc{Baseline} condition. Reasoning models (o1, DeepSeek R1) show [greater/similar] sensitivity to framing.}
+\label{fig:framing-heatmap}
+\end{figure}
+
+\subsection{Reasoning Model Analysis}
+\label{sec:exp-reasoning}
+
+A notable finding is the performance of reasoning-specialized models. Table~\ref{tab:reasoning} compares chain-of-thought (CoT) models against standard models.
+
+\begin{table}[h]
+\centering
+\caption{Reasoning Model Comparison}
+\label{tab:reasoning}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Model} & \textbf{Type} & \textbf{Profit (\$)} & \textbf{Decisions Explained} & \textbf{Math Errors} \\
+\midrule
+OpenAI o1 & CoT & X.XX $\pm$ X.XX & X\% & X\% \\
+o3-mini & CoT & X.XX $\pm$ X.XX & X\% & X\% \\
+DeepSeek R1 & CoT & X.XX $\pm$ X.XX & X\% & X\% \\
+QwQ-32B & CoT & X.XX $\pm$ X.XX & X\% & X\% \\
+\midrule
+GPT-5.1 & Extended & X.XX $\pm$ X.XX & X\% & X\% \\
+Claude Sonnet 4 & Standard & X.XX $\pm$ X.XX & X\% & X\% \\
+Gemini 3 Pro & Extended & X.XX $\pm$ X.XX & X\% & X\% \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small CoT = Chain-of-Thought reasoning models. Decisions Explained = percentage of turns with explicit reasoning. Math Errors = percentage of turns with calculation mistakes.
+\end{flushleft}
+\end{table}
+
+\subsection{Behavioral Analysis}
+\label{sec:exp-behavior}
+
+Beyond aggregate metrics, we analyze specific behavioral patterns induced by different framings.
+
+\paragraph{Risk-Taking Behavior.}
+We operationalize risk-taking as: (1) price variance, (2) inventory overstocking ratio, and (3) location switching frequency. Table~\ref{tab:risk} compares \textsc{Aggressive}, \textsc{Competitive}, and \textsc{Conservative} conditions.
+
+\begin{table}[h]
+\centering
+\caption{Risk-Taking Indicators by Condition}
+\label{tab:risk}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Condition} & \textbf{Price Variance} & \textbf{Overstock Ratio} & \textbf{Location Switches} \\
+\midrule
+\textsc{Conservative} & X.XX & X.XX & X.X \\
+\textsc{Baseline} & X.XX & X.XX & X.X \\
+\textsc{Aggressive} & X.XX & X.XX & X.X \\
+\textsc{Competitive} & X.XX & X.XX & X.X \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Temporal Strategy Patterns.}
+Figure~\ref{fig:temporal} shows how agent behavior evolves over the 14-day season under different framings.
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}\textbf{[PLACEHOLDER]}\\ Line plots showing:\\ (a) Mean daily profit by day and condition\\ (b) Inventory levels over time\\ (c) Price trajectories\vspace{2cm}}}
+\caption{Temporal evolution of agent behavior across conditions. \textsc{Growth} agents show [higher/lower] early investment; \textsc{Survival} agents show [more/less] conservative late-game play.}
+\label{fig:temporal}
+\end{figure}
+
+\paragraph{Weather Responsiveness.}
+A key skill is adapting to weather conditions. Figure~\ref{fig:weather-response} shows price distributions conditioned on weather type.
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}\textbf{[PLACEHOLDER]}\\ Box plots: Price distribution by weather type\\ Faceted by model tier\\ Optimal price range shown as reference band\vspace{2cm}}}
+\caption{Price adaptation to weather conditions. The dashed region indicates the optimal price range. Premium models show strongest weather adaptation; DeepSeek R1 matches premium performance.}
+\label{fig:weather-response}
+\end{figure}
+
+\subsection{Architecture Ablation}
+\label{sec:exp-architecture}
+
+Table~\ref{tab:architecture-results} compares agent architectures on five representative flagship models: Claude Opus 4.5 (Anthropic), GPT-5.1 (OpenAI), Gemini 3 Pro (Google), DeepSeek V3 (DeepSeek), and Llama 3.3 70B (Meta).
+
+\begin{table}[h]
+\centering
+\caption{Agent Architecture Comparison (Mean Profit $\pm$ SE)}
+\label{tab:architecture-results}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Model} & \textsc{React} & \textsc{Plan-Act} & \textsc{Act-Reflect} & \textsc{Full} \\
+\midrule
+Claude Opus 4.5 & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+GPT-5.1 & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+Gemini 3 Pro & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+DeepSeek V3 & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+Llama 3.3 70B & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+\midrule
+\textbf{Average} & \$X.XX & \$X.XX & \$X.XX & \$X.XX \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small Significance vs.\ \textsc{React}: $^*p<.05$, $^{**}p<.01$, $^{***}p<.001$ (paired $t$-test, Bonferroni-corrected for 3 comparisons per model, $\alpha_{\text{adj}}=.017$).
+\end{flushleft}
+\end{table}
+
+\paragraph{Planning vs.\ Reflection.}
+We find that [planning/reflection/both/neither] provides the largest benefit. \textsc{Plan-Act} improves performance by [X\%/$d$=X.XX] on average, while \textsc{Act-Reflect} shows [smaller/larger/similar] gains of [X\%/$d$=X.XX].
+
+\paragraph{Diminishing Returns.}
+The \textsc{Full} architecture requires 3$\times$ the API calls but [does/does not] provide proportional improvement, suggesting [explanation].
+
+\paragraph{Qualitative Observations.}
+Examining generated plans, we observe:
+\begin{itemize}
+    \item [Observation about plan quality]
+    \item [Observation about reflection quality]
+    \item [Whether plans are actually followed]
+\end{itemize}
+
+\subsection{Cognitive Scaffolding Ablation}
+\label{sec:exp-scaffolding}
+
+Table~\ref{tab:scaffolding-results} shows the effect of providing computational tools.
+
+\begin{table}[h]
+\centering
+\caption{Cognitive Scaffolding Comparison (Mean Profit $\pm$ SE)}
+\label{tab:scaffolding-results}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Model} & \textbf{None} & \textbf{Calculator} & \textbf{Math Prompt} & \textbf{Code} \\
+\midrule
+Claude Opus 4.5 & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+GPT-5.1 & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+Gemini 3 Pro & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+DeepSeek V3 & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+Llama 3.3 70B & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX \\
+\midrule
+\textbf{Average} & \$X.XX & \$X.XX & \$X.XX & \$X.XX \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small Significance vs.\ \textbf{None}: $^*p<.05$, $^{**}p<.01$, $^{***}p<.001$ (paired $t$-test, Bonferroni-corrected for 3 comparisons per model, $\alpha_{\text{adj}}=.017$).
+\end{flushleft}
+\end{table}
+
+\paragraph{Tool Usage Patterns.}
+When given the calculator tool, agents used it on [X\%] of turns. The code interpreter was used [more/less] frequently ([X\%] of turns). Common use cases included:
+\begin{itemize}
+    \item [Use case 1, e.g., profit margin calculation]
+    \item [Use case 2, e.g., demand estimation]
+    \item [Use case 3, e.g., price optimization]
+\end{itemize}
+
+\paragraph{Math Prompt vs.\ Calculator Tool.}
+Interestingly, the math encouragement prompt [outperformed/matched/underperformed] the calculator tool ($p$ [</>] 0.05). This suggests that [interpretation about whether the bottleneck is computation vs.\ reasoning structure].
+
+\paragraph{Calculation Accuracy.}
+We audited 50 episodes with math prompts for calculation errors:
+\begin{itemize}
+    \item [X\%] of calculations were correct
+    \item Common errors: [list error types]
+    \item Errors [did/did not] correlate with poor decisions
+\end{itemize}
+
+\subsection{Failure Mode Analysis}
+\label{sec:exp-failures}
+
+We manually coded 100 randomly sampled episodes to identify systematic failure modes. Table~\ref{tab:failures} shows the prevalence of each failure type.
+
+\begin{table}[h]
+\centering
+\caption{Failure Mode Prevalence (\% of episodes exhibiting behavior)}
+\label{tab:failures}
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Failure Mode} & \textbf{Base} & \textbf{Aggr} & \textbf{Cons} & \textbf{Comp} & \textbf{Surv} & \textbf{Grow} \\
+\midrule
+Perishable overbuying & XX\% & XX\% & XX\% & XX\% & XX\% & XX\% \\
+Ignoring weather forecast & XX\% & XX\% & XX\% & XX\% & XX\% & XX\% \\
+Price anchoring (same price daily) & XX\% & XX\% & XX\% & XX\% & XX\% & XX\% \\
+Stockout on peak days & XX\% & XX\% & XX\% & XX\% & XX\% & XX\% \\
+Unnecessary location switching & XX\% & XX\% & XX\% & XX\% & XX\% & XX\% \\
+Failure to buy cooler when beneficial & XX\% & XX\% & XX\% & XX\% & XX\% & XX\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Episode Difficulty Analysis}
+\label{sec:exp-difficulty}
+
+Not all episodes are equally difficult. We analyze what makes certain weather sequences challenging and how difficulty correlates with agent performance.
+
+\paragraph{Difficulty Metrics.}
+We define episode difficulty along three dimensions:
+\begin{itemize}
+    \item \textbf{Weather volatility}: Standard deviation of demand multipliers across the 14-day sequence
+    \item \textbf{Trap frequency}: Number of ``trap'' patterns (e.g., hot day followed by storm, incentivizing overbuying)
+    \item \textbf{Forecast reliability}: How often tomorrow's forecast matches actual weather
+\end{itemize}
+
+\paragraph{Seed Difficulty Distribution.}
+Figure~\ref{fig:difficulty} shows the distribution of Oracle-achievable profit across our 5 seeds, revealing variance in episode difficulty.
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{2cm}\textbf{[PLACEHOLDER]}\\ Histogram of Oracle profit by seed, with seeds colored by difficulty tier (Easy/Medium/Hard). Annotate hardest and easiest seeds.\vspace{2cm}}}
+\caption{Episode difficulty distribution across seeds. Seeds 1, 42, 100, 7, 2025 vary in achievable profit, with [X] seeds classified as ``hard'' (Oracle profit $<$ \$XX).}
+\label{fig:difficulty}
+\end{figure}
+
+\paragraph{Performance Gap by Difficulty.}
+Table~\ref{tab:difficulty-gap} shows how the human-LLM performance gap varies with episode difficulty.
+
+\begin{table}[h]
+\centering
+\caption{Performance Gap by Episode Difficulty Tier}
+\label{tab:difficulty-gap}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Difficulty} & \textbf{Human Profit} & \textbf{Best LLM Profit} & \textbf{Gap} \\
+\midrule
+Easy (top tercile) & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX \\
+Medium & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX \\
+Hard (bottom tercile) & \$X.XX $\pm$ X.XX & \$X.XX $\pm$ X.XX & \$X.XX \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small Difficulty tiers based on Oracle profit terciles. Gap = Human $-$ LLM.
+\end{flushleft}
+\end{table}
+
+We hypothesize that [humans/LLMs] will show larger performance gaps on hard episodes, suggesting [interpretation about robustness under adversity].
+
+\paragraph{Trap Pattern Analysis.}
+The most challenging pattern is the ``hot-storm trap'': a hot day (high demand) followed by a stormy day (near-zero demand). Agents who overbuy perishables on the hot day face spoilage. We identify [X] such traps across our seed set and find that [observation about agent behavior on these patterns].

@@ -1,0 +1,8 @@
+spec_version: 1
+name: lemonade_bench
+type: space
+runtime: fastapi
+app: server.app:app
+port: 8000
+
+

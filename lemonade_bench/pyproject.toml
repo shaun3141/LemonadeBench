@@ -1,0 +1,90 @@
+# Copyright (c) 2025 LemonadeBench Contributors
+# BSD-3-Clause License
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lemonade-bench"
+version = "0.1.0"
+description = "LemonadeBench - A Lemonade Stand Tycoon Environment for OpenEnv RL Training"
+requires-python = ">=3.10"
+license = {text = "BSD-3-Clause"}
+authors = [
+    {name = "LemonadeBench Contributors"}
+]
+keywords = ["reinforcement-learning", "openenv", "simulation", "gymnasium", "ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Core OpenEnv dependencies (required for server functionality)
+    "openenv-core>=0.1.0",
+    "fastapi>=0.115.0",
+    "pydantic>=2.0.0",
+    "uvicorn>=0.24.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.2.1",
+    # Database
+    "supabase>=2.0.0",
+    # Harness CLI
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "pyyaml>=6.0",
+    # LLM providers
+    "anthropic>=0.40.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+openai = [
+    "openai>=1.0.0",
+]
+all = [
+    "openai>=1.0.0",
+]
+
+[project.scripts]
+# Server entry point - enables running via: uv run server
+server = "lemonade_bench.server.app:main"
+# CLI harness - enables running via: lemonade run
+lemonade = "lemonade_bench.harness.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Shaun3141/LemonadeBench"
+Repository = "https://github.com/Shaun3141/LemonadeBench"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+]

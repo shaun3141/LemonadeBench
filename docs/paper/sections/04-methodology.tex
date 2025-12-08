@@ -1,0 +1,303 @@
+\section{Evaluation Methodology}
+\label{sec:methodology}
+
+Our evaluation addresses two research questions: (1) How do frontier LLMs perform on multi-day business decision-making compared to simple baselines? (2) \textbf{How do goal-framing prompts influence agent strategy and performance?} The second question is particularly novel---while prior work has studied prompt engineering for task completion, we investigate how \emph{motivational framing} shapes economic behavior over extended horizons.
+
+\subsection{Metrics}
+\label{sec:metrics}
+
+We evaluate agents on primary and diagnostic metrics:
+
+\paragraph{Primary Metric.}
+\textbf{Total Profit} ($\pi$): Cumulative profit in cents over the 14-day season. This is the environment's optimization target and enables direct comparison across conditions.
+
+\paragraph{Diagnostic Metrics.}
+To understand \emph{how} agents achieve (or fail to achieve) profit, we track:
+
+\begin{itemize}
+    \item \textbf{Spoilage Rate}: $\frac{\text{lemons spoiled} + \text{ice melted}}{\text{total perishables purchased}}$ --- measures inventory forecasting ability
+    \item \textbf{Stockout Rate}: $\frac{\text{customers turned away}}{\text{total potential customers}}$ --- measures demand anticipation
+    \item \textbf{Weather Adaptation Score}: Correlation between price charged and weather-optimal price --- measures responsiveness to conditions
+    \item \textbf{Price Volatility}: Standard deviation of daily prices --- high volatility may indicate erratic strategy
+    \item \textbf{Recovery Score}: Average profit on days following a loss day --- measures resilience
+    \item \textbf{Location Efficiency}: Revenue per permit dollar spent --- measures strategic location use
+    \item \textbf{Error Rate}: $\frac{\text{invalid actions}}{\text{total action attempts}}$ --- measures constraint understanding and action validity
+\end{itemize}
+
+\subsection{Agent Architectures}
+\label{sec:architectures}
+
+Beyond goal framing, we investigate how the \emph{structure} of the agent loop affects performance. We implement four architectures of increasing cognitive complexity:
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\vspace{0.3cm}
+\textbf{Agent Architecture Variants}\\[0.3cm]
+\begin{tabular}{@{}l@{\hspace{1cm}}l@{}}
+\textsc{React}: & Observe $\rightarrow$ Decide $\rightarrow$ Act \\[0.2cm]
+\textsc{Plan-Act}: & Observe $\rightarrow$ \textbf{Plan} $\rightarrow$ Decide $\rightarrow$ Act \\[0.2cm]
+\textsc{Act-Reflect}: & Observe $\rightarrow$ Decide $\rightarrow$ Act $\rightarrow$ \textbf{Reflect} \\[0.2cm]
+\textsc{Full}: & Observe $\rightarrow$ \textbf{Plan} $\rightarrow$ Decide $\rightarrow$ Act $\rightarrow$ \textbf{Reflect} \\
+\end{tabular}
+\vspace{0.3cm}}}
+\caption{Four agent architectures tested. Bold components are additional LLM calls beyond the base \textsc{React} loop.}
+\label{fig:architectures}
+\end{figure}
+
+\paragraph{\textsc{React} (Baseline).}
+Based on the ReAct framework \citep{yao2023react}, this is the simplest architecture: the agent receives an observation and immediately outputs an action. This is the standard approach in most agent benchmarks and serves as our baseline.
+
+\paragraph{\textsc{Plan-Act}.}
+Before deciding, the agent is prompted to generate an explicit multi-day plan:
+\begin{quote}
+\small\ttfamily
+``Before taking action, first outline your strategy for the next 3-5 days. Consider: (1) the weather forecast, (2) your current inventory levels, (3) your cash position, (4) your reputation trajectory. Then decide today's action.''
+\end{quote}
+This tests whether explicit planning improves long-horizon reasoning.
+
+\paragraph{\textsc{Act-Reflect}.}
+Inspired by Reflexion \citep{shinn2023reflexion}, after each action the agent receives its results and is prompted to reflect:
+\begin{quote}
+\small\ttfamily
+``Reflect on yesterday's results. What worked well? What could you have done better? What will you do differently going forward? Then decide today's action.''
+\end{quote}
+This tests whether retrospective analysis improves learning within an episode.
+
+\paragraph{\textsc{Full} (Plan + Reflect).}
+Combines both planning and reflection phases, requiring three LLM calls per turn (plan, decide, reflect). This tests whether the benefits compound or whether the additional compute is wasteful.
+
+\subsection{Cognitive Scaffolding}
+\label{sec:scaffolding}
+
+We also test whether providing explicit cognitive tools improves agent reasoning.
+
+\paragraph{Calculator Tool Access.}
+We provide an optional \texttt{calculate} tool that agents can invoke to perform arithmetic:
+\begin{verbatim}
+{
+  "name": "calculate",
+  "description": "Evaluate a mathematical expression",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "expression": {"type": "string", "description": "Math expression, e.g., '(50 * 0.75) - (12 * 0.25)'"}
+    }
+  }
+}
+\end{verbatim}
+
+This tests whether access to reliable computation improves decisions that require precise calculations (e.g., profit margins, break-even analysis).
+
+\paragraph{Math Encouragement Prompt.}
+Rather than providing a tool, we add prompting that encourages explicit calculation:
+\begin{quote}
+\small\ttfamily
+``Always show your math. Before setting a price, calculate: (1) your cost per cup, (2) expected demand at different price points, (3) projected profit. Write out the calculations step by step.''
+\end{quote}
+
+\paragraph{Code Interpreter Access.}
+For the most capable models, we provide a Python code execution tool:
+\begin{verbatim}
+{
+  "name": "run_python",
+  "description": "Execute Python code and return the result",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "code": {"type": "string", "description": "Python code to execute"}
+    }
+  }
+}
+\end{verbatim}
+
+This enables complex analyses like optimization over price points or Monte Carlo simulation of weather scenarios.
+
+\subsection{Experimental Matrix}
+\label{sec:matrix}
+
+Table~\ref{tab:matrix} summarizes the full experimental design. Due to combinatorial explosion, we use a stratified design: full coverage for primary conditions, targeted ablations for architecture and scaffolding.
+
+\begin{table}[h]
+\centering
+\caption{Experimental Matrix}
+\label{tab:matrix}
+\small
+\begin{tabular}{@{}llc@{}}
+\toprule
+\textbf{Dimension} & \textbf{Conditions} & \textbf{Episodes} \\
+\midrule
+\multicolumn{3}{l}{\emph{Full Factorial (20 models $\times$ 6 conditions $\times$ 5 seeds)}} \\
+Goal Framing & Baseline, Aggressive, Conservative, & 600 \\
+ & Competitive, Survival, Growth & \\
+\midrule
+\multicolumn{3}{l}{\emph{Architecture Ablation (5 models $\times$ 4 architectures $\times$ 10 seeds)}} \\
+Architecture & React, Plan-Act, Act-Reflect, Full & 200 \\
+\midrule
+\multicolumn{3}{l}{\emph{Scaffolding Ablation (5 models $\times$ 4 scaffolds $\times$ 10 seeds)}} \\
+Scaffolding & None, Calculator, Math Prompt, Code & 200 \\
+\midrule
+\multicolumn{3}{r}{\textbf{Total Episodes: 1000}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Goal-Framing Conditions}
+\label{sec:conditions}
+
+A key contribution of this work is systematically studying how motivational framing in prompts affects agent economic behavior. We test six goal-framing conditions, each prepended to the base system prompt:
+
+\begin{table}[h]
+\centering
+\caption{Goal-Framing Prompt Conditions}
+\label{tab:conditions}
+\small
+\begin{tabular}{@{}p{2.2cm}p{9.5cm}@{}}
+\toprule
+\textbf{Condition} & \textbf{Prompt Addition} \\
+\midrule
+\textsc{Baseline} & \emph{(No additional framing --- base prompt only)} \\
+\addlinespace
+\textsc{Aggressive} & ``You are an aggressive entrepreneur who takes calculated risks to maximize returns. Don't leave money on the table---push prices when demand is high and invest boldly in inventory.'' \\
+\addlinespace
+\textsc{Conservative} & ``You are a cautious business owner who prioritizes avoiding losses over maximizing gains. Protect your capital, avoid waste, and prefer steady small profits over risky big wins.'' \\
+\addlinespace
+\textsc{Competitive} & ``You are competing against 10 other lemonade stands in a tournament. Only the top 3 profit earners will win. You need to outperform the average significantly to place.'' \\
+\addlinespace
+\textsc{Survival} & ``Your family depends on this business. If you end the season with less money than you started (\$20), you will have failed. Survival is the priority.'' \\
+\addlinespace
+\textsc{Growth} & ``You're building a lemonade empire. This 14-day season is just the beginning---focus on building reputation and learning the market, even if it costs short-term profit.'' \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These conditions probe different aspects of LLM decision-making:
+\begin{itemize}
+    \item \textsc{Aggressive} vs.\ \textsc{Conservative}: Tests risk calibration and loss aversion
+    \item \textsc{Competitive}: Tests whether social/tournament framing induces riskier behavior
+    \item \textsc{Survival}: Tests whether explicit downside framing increases conservatism
+    \item \textsc{Growth}: Tests whether long-term framing changes exploration/exploitation balance
+\end{itemize}
+
+\subsection{Models}
+\label{sec:models}
+
+We evaluate 20 frontier models spanning 7 providers, selected to represent the state of the art in December 2025. Table~\ref{tab:models} summarizes the model tiers; full specifications including pricing are provided in Appendix~\ref{app:versions}.
+
+\begin{table}[h]
+\centering
+\caption{Models Evaluated by Tier}
+\label{tab:models}
+\small
+\begin{tabular}{@{}p{2.5cm}p{6cm}c@{}}
+\toprule
+\textbf{Tier} & \textbf{Models} & \textbf{Count} \\
+\midrule
+Premium & Claude Sonnet 4, Claude Opus 4.5, o1, GPT-5.1, Gemini 3 Pro & 5 \\
+Balanced & Claude 3.5 Sonnet, o3-mini, Gemini 2.5 Flash, Grok-2 & 4 \\
+Value & DeepSeek R1, DeepSeek V3, QwQ-32B, Mistral Small 3 & 4 \\
+Open Source & Llama 3.3 70B, Llama 3.1 405B, Qwen 2.5 72B, Mistral Large & 4 \\
+Fast & Claude 3.5 Haiku, GPT-4o-mini, Gemini Flash 1.5 & 3 \\
+\midrule
+\multicolumn{2}{r}{\textbf{Total}} & \textbf{20} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All models are accessed via OpenRouter's unified API with tool/function calling for structured action output. This approach ensures consistent API behavior across providers and enables reproducible comparisons. Temperature uses model defaults to allow natural strategic variation.
+
+\subsection{Baselines}
+\label{sec:baselines}
+
+We compare LLM agents against programmatic baselines:
+
+\begin{itemize}
+    \item \textbf{Random}: Uniformly random valid actions (price 25--200¢, random purchases 0--20 units)
+    \item \textbf{Fixed}: Static strategy ($p=75$¢, buy 10 lemons/day, no location changes)
+    \item \textbf{Reactive}: Weather-based heuristic (high price on hot days, low on rainy; buy lemons proportional to forecast demand)
+    \item \textbf{Oracle}: Optimal policy computed via dynamic programming with full future weather knowledge (upper bound)
+\end{itemize}
+
+\subsection{Human Baselines}
+\label{sec:human-baselines}
+
+To contextualize LLM agent performance and establish ecologically valid upper bounds, we collect human baseline data using our web-based interface.
+
+\paragraph{Recruitment.}
+We recruit $N=20$ participants via Prolific, requiring: (1) fluent English, (2) prior experience with strategy or simulation games, and (3) completion of a qualification quiz demonstrating understanding of the game mechanics. Participants are compensated \$5.00 base plus a performance bonus of \$0.50 per \$10 of in-game profit, incentivizing genuine effort.
+
+\paragraph{Protocol.}
+Each participant completes three episodes with different random seeds (seeds 21--40, distinct from LLM evaluation seeds 1--20 to test generalization). Participants receive the same game information as LLM agents: current weather, forecast, inventory, cash, and market hints. Unlike LLMs, humans can take unlimited time per decision and are not required to articulate reasoning.
+
+\paragraph{Data Collection.}
+For each human episode, we record:
+\begin{itemize}
+    \item All actions and outcomes (identical to LLM logging)
+    \item Decision latency per turn (time from observation display to action submission)
+    \item Post-game survey: self-reported strategy, perceived difficulty (1--5), and confidence (1--5)
+\end{itemize}
+
+\paragraph{Analysis.}
+Human baselines enable three comparisons: (1) absolute performance gap between humans and LLMs, (2) behavioral differences (e.g., risk-taking patterns, weather adaptation), and (3) decision efficiency (profit per unit decision time). We hypothesize that humans will outperform LLMs on inventory management but show similar weather adaptation.
+
+\subsection{Experimental Protocol}
+\label{sec:protocol}
+
+\paragraph{Seeds and Replication.}
+We use 5 fixed random seeds (1, 42, 100, 7, 2025), each generating a unique but reproducible 14-day weather sequence. Every model $\times$ condition combination runs on all 5 seeds, yielding $20 \text{ models} \times 6 \text{ conditions} \times 5 \text{ seeds} = 600$ goal-framing episodes, plus 400 additional episodes for architecture and scaffolding ablations.
+
+\paragraph{Conversation Structure.}
+Each episode maintains a multi-turn conversation where the agent receives cumulative context (all prior observations and actions). This tests both single-step reasoning and ability to learn from within-episode feedback.
+
+\paragraph{Data Collection.}
+For each episode, we log:
+\begin{enumerate}
+    \item Full conversation history (prompts, responses, tool calls)
+    \item Per-day observations and actions
+    \item Agent reasoning (extracted from required \texttt{reasoning} field)
+    \item All diagnostic metrics
+\end{enumerate}
+
+\paragraph{Statistical Analysis.}
+We report mean and standard error across seeds. Significance testing uses paired t-tests (same seed across conditions) with Bonferroni correction for multiple comparisons. Effect sizes are reported as Cohen's $d$.
+
+\subsection{Qualitative Analysis}
+\label{sec:qualitative}
+
+Beyond quantitative metrics, we conduct qualitative analysis of agent reasoning:
+
+\begin{itemize}
+    \item \textbf{Strategy Classification}: Manual coding of agent reasoning into strategy types (weather-reactive, inventory-focused, price-maximizing, etc.)
+    \item \textbf{Failure Mode Taxonomy}: Categorizing common errors (overbuying perishables, ignoring forecasts, price anchoring, etc.)
+    \item \textbf{Adaptation Patterns}: Tracking how strategies evolve over the 14-day horizon
+    \item \textbf{Prompt Compliance}: Whether agents acknowledge and act on goal-framing prompts
+\end{itemize}
+
+\subsection{Hypotheses}
+\label{sec:hypotheses}
+
+Based on prior work on LLM behavior, agent architectures, and human economic psychology, we pre-register the following hypotheses:
+
+\paragraph{Goal-Framing Hypotheses.}
+\begin{enumerate}[label=\textbf{H\arabic*}:]
+    \item \textsc{Competitive} framing will increase risk-taking (higher price variance, more location switching) compared to \textsc{Baseline}.
+    \item \textsc{Conservative} and \textsc{Survival} framing will reduce spoilage rates but also reduce peak-day profits.
+    \item \textsc{Aggressive} framing will improve performance on high-demand days but increase losses on low-demand days.
+    \item \textsc{Growth} framing will increase early-season exploration (more location trials, upgrade purchases) at the cost of early profits.
+    \item Larger models will show greater sensitivity to goal-framing (larger effect sizes between conditions).
+\end{enumerate}
+
+\paragraph{Architecture Hypotheses.}
+\begin{enumerate}[label=\textbf{H\arabic*}:,resume]
+    \item \textsc{Plan-Act} will outperform \textsc{React} on inventory management (lower spoilage) due to multi-day planning.
+    \item \textsc{Act-Reflect} will show stronger improvement in the second half of the season (days 8--14) as reflections accumulate.
+    \item \textsc{Full} will not provide benefits proportional to its 3$\times$ API cost (diminishing returns).
+    \item Explicit plans will often be abandoned mid-episode when conditions change unexpectedly.
+\end{enumerate}
+
+\paragraph{Scaffolding Hypotheses.}
+\begin{enumerate}[label=\textbf{H\arabic*}:,resume]
+    \item Calculator access will reduce pricing errors (prices too high or too low for conditions).
+    \item Math encouragement prompts will improve performance even without external tools (structured reasoning helps).
+    \item Code interpreter access will be underutilized---agents will rarely write optimization code.
+    \item All LLM agents will underperform the \textbf{Reactive} baseline on inventory management (spoilage rate), regardless of scaffolding.
+\end{enumerate}

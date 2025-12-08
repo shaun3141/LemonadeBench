@@ -1,0 +1,26 @@
+app = 'lemonade-bench'
+primary_region = 'sjc'
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[checks]
+  [checks.health]
+    port = 8080
+    type = "http"
+    interval = "30s"
+    timeout = "5s"
+    path = "/api/health"
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+

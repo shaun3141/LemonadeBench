@@ -1,0 +1,49 @@
+# LemonadeBench Architecture Ablation Study
+#
+# This configuration tests how different agent architectures affect performance,
+# as described in Section 4.2 of the paper.
+#
+# Run with: lemonade batch examples/architecture_ablation.yaml --parallel 4
+#
+# The experimental matrix generates all combinations of:
+#   4 models × 10 seeds × 4 architectures = 160 episodes
+
+name: "Architecture Ablation Study"
+
+experiment:
+  # Use OpenRouter for consistent API access across all providers
+  provider: openrouter
+  
+  # Representative models from different tiers
+  models:
+    - anthropic/claude-sonnet-4   # Premium
+    - openai/gpt-4o               # Premium
+    - deepseek/deepseek-r1        # Value/Reasoning
+    - meta-llama/llama-3.3-70b-instruct  # Open source
+  
+  # More seeds for statistical power on architecture comparison
+  seeds: [1, 2, 3, 42, 100, 7, 2025, 123, 456, 789]
+  
+  # All four architectures from Section 4.2
+  architectures:
+    - react         # Baseline: Observe → Decide → Act
+    - plan_act      # Planning: Observe → Plan → Decide → Act
+    - act_reflect   # Reflection: Observe → Decide → Act → Reflect
+    - full          # Combined: Plan → Decide → Act → Reflect
+  
+  # Hold goal framing constant for this study
+  goal_framings: [baseline]
+  
+  # No additional scaffolding
+  scaffoldings: [none]
+
+logging:
+  local: true
+  supabase: true
+  dir: ./runs/architecture_study
+
+# Key questions this study addresses:
+# 1. Does explicit planning (plan_act) improve inventory management?
+# 2. Does reflection (act_reflect) improve second-half performance?
+# 3. Does the full architecture (plan + reflect) justify 3x API cost?
+# 4. Are plans actually followed, or abandoned mid-episode?

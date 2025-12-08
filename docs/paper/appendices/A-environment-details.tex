@@ -1,0 +1,46 @@
+\section{Environment Details}
+\label{app:environment}
+
+\subsection{Supply Costs and Recipes}
+
+Table~\ref{tab:supplies} details the supply economics. Bulk purchasing provides 10\% discount at medium quantities and 20\% at large quantities.
+
+\begin{table}[h]
+\centering
+\caption{Supply Costs and Usage}
+\label{tab:supplies}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Supply} & \textbf{Base Cost} & \textbf{Per Cup} & \textbf{Cups/Unit} & \textbf{Shelf Life} \\
+\midrule
+Lemons & \$0.25 & 0.25 & 4 & 3 days \\
+Sugar (bag) & \$0.50 & 0.10 & 10 & $\infty$ \\
+Cups & \$0.05 & 1.00 & 1 & $\infty$ \\
+Ice (bag) & \$0.25 & 0.20 & 5 & 1 day* \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small *Ice melts 100\% overnight without cooler, 50\% with cooler upgrade (\$2.50).
+\end{flushleft}
+\end{table}
+
+\subsection{Bulk Pricing Tiers}
+
+\begin{itemize}
+    \item \textbf{Lemons}: Single (0\%), Dozen/12+ (10\% off), Crate/144+ (20\% off)
+    \item \textbf{Sugar}: Single (0\%), Case/5+ (10\% off), Pallet/20+ (20\% off)
+    \item \textbf{Cups}: Pack/10 (0\%), Sleeve/50+ (10\% off), Case/250+ (20\% off)
+    \item \textbf{Ice}: Single (0\%), Cooler/5+ (10\% off), Delivery/20+ (20\% off)
+\end{itemize}
+
+\subsection{Default Configuration}
+
+\begin{itemize}
+    \item Season length: 14 days
+    \item Starting cash: \$20.00
+    \item Starting inventory: 10 lemons, 5 sugar bags, 50 cups, 5 ice bags
+    \item Base customers: 50/day (before modifiers)
+    \item Optimal price: \$0.50 (95\% conversion)
+    \item Maximum tolerated price: \$2.00 (near-zero conversion)
+\end{itemize}
+

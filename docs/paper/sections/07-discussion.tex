@@ -1,0 +1,96 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Implications for Agent Deployment}
+\label{sec:implications}
+
+Our findings have practical implications for deploying LLM agents in decision-making contexts:
+
+\begin{enumerate}
+    \item \textbf{Prompt framing matters}: The same model can exhibit meaningfully different behavior based on goal framing. Practitioners should carefully consider how objectives are communicated to agents.
+    
+    \item \textbf{Risk calibration is malleable}: \textsc{Competitive} and \textsc{Aggressive} framings [do/do not] reliably increase risk-taking, suggesting that [LLMs can/cannot] be steered toward desired risk profiles through prompting alone.
+    
+    \item \textbf{Architecture choice depends on task}: [Planning/Reflection/Neither] provided the largest benefit in our setting. For tasks requiring multi-day coordination, [recommendation]. For tasks requiring adaptation to feedback, [recommendation].
+    
+    \item \textbf{Tools vs.\ prompts}: The [calculator tool/math prompt] provided [larger/similar/smaller] benefits, suggesting that [structured reasoning / reliable computation] is the bottleneck for LLM decision-making. Practitioners may not need complex tool infrastructure if [finding about prompts].
+    
+    \item \textbf{Inventory management remains challenging}: Even with explicit forecasts and calculation tools provided, all models struggled with perishable inventory---a cautionary finding for supply chain applications.
+\end{enumerate}
+
+\subsection{When Do Agent Architectures Help?}
+\label{sec:arch-discussion}
+
+Our architecture ablation provides nuanced insights into when additional cognitive phases benefit agent performance.
+
+\paragraph{Planning Benefits.}
+\textsc{Plan-Act} [improved/did not improve] inventory management, supporting/contradicting the intuition that explicit planning helps with multi-day resource allocation. Interestingly, we observed that [observation about plan quality or adherence].
+
+\paragraph{Reflection Benefits.}
+\textsc{Act-Reflect} showed [stronger/weaker] effects in the second half of episodes, suggesting that reflection [does/does not] enable within-episode learning. The quality of reflections [varied/was consistent] across models, with [observation about which models reflected more effectively].
+
+\paragraph{Cost-Benefit Tradeoff.}
+\textsc{Full} required approximately 3$\times$ the API calls of \textsc{React}, at roughly [\$X.XX/\$X.XX] per episode. The marginal benefit over \textsc{Plan-Act} or \textsc{Act-Reflect} was [$d$ = X.XX], suggesting [recommendation about when full architecture is warranted].
+
+\subsection{The Role of Cognitive Scaffolding}
+\label{sec:scaffolding-discussion}
+
+Our scaffolding experiments reveal insights about the nature of LLM reasoning limitations in economic tasks.
+
+\paragraph{Computation vs.\ Reasoning.}
+If the bottleneck were arithmetic errors, calculator access should have helped. If the bottleneck were lack of structured thinking, math prompts should have helped. We found [which helped more], suggesting the primary limitation is [computation/reasoning structure/something else].
+
+\paragraph{Underutilization of Tools.}
+Agents used the code interpreter on only [X\%] of opportunities. When they did use it, the code was [sophisticated/trivial], suggesting that [interpretation about agent tool-use capabilities].
+
+\paragraph{Emergent Behaviors.}
+We observed several unexpected patterns with scaffolding:
+\begin{itemize}
+    \item [Unexpected behavior 1]
+    \item [Unexpected behavior 2]
+\end{itemize}
+
+\subsection{Connections to Behavioral Economics}
+\label{sec:behavioral}
+
+Our goal-framing conditions were inspired by well-studied phenomena in human behavioral economics:
+
+\begin{itemize}
+    \item \textbf{Loss aversion} \citep{kahneman1979prospect}: \textsc{Survival} framing explicitly emphasizes losses. We [did/did not] observe increased conservatism, suggesting LLMs [do/do not] exhibit loss-averse behavior.
+    
+    \item \textbf{Tournament effects}: Economics literature shows humans take more risks in competitive settings. Our \textsc{Competitive} condition [replicates/fails to replicate] this effect in LLMs.
+    
+    \item \textbf{Temporal discounting} \citep{frederick2002time}: \textsc{Growth} framing encourages long-term thinking. Agents [did/did not] sacrifice early profits for reputation building, indicating [presence/absence] of temporal reasoning.
+\end{itemize}
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+Several limitations constrain the generalizability of our findings:
+
+\begin{enumerate}
+    \item \textbf{Single domain}: While the lemonade stand is interpretable, it may not generalize to other business domains with different dynamics (e.g., manufacturing, services).
+    
+    \item \textbf{Temperature sensitivity}: We used $T=0.7$ for all models; different temperature settings may yield different framing effects.
+    
+    \item \textbf{Prompt sensitivity}: Our specific phrasings of goal-framing conditions may not capture the full space of possible framings.
+    
+    \item \textbf{No fine-tuning}: We evaluated base models without task-specific training; fine-tuned agents may show different patterns.
+    
+    \item \textbf{API model versions}: Model behavior may change with provider updates; we report exact model versions in Appendix~\ref{app:versions}.
+\end{enumerate}
+
+\subsection{Future Work}
+\label{sec:future}
+
+This work opens several avenues for future research:
+
+\begin{itemize}
+    \item \textbf{Multi-agent settings}: How do framing effects change when multiple agents compete directly in the same environment?
+    
+    \item \textbf{Learning from feedback}: Can agents improve their strategies through explicit feedback or self-reflection mechanisms?
+    
+    \item \textbf{Hybrid approaches}: Combining LLM reasoning with traditional optimization (e.g., using LLMs for strategy selection and solvers for execution).
+    
+    \item \textbf{Transfer to real domains}: Validating whether insights transfer to real business decision-making tasks.
+\end{itemize}

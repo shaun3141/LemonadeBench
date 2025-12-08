@@ -1,0 +1,161 @@
+\section{The LemonadeBench Environment}
+\label{sec:environment}
+
+LemonadeBench simulates a lemonade stand business over a configurable season (default: 14 days). The agent operates as a business owner making daily decisions about pricing, inventory procurement, location selection, and capital allocation. The environment follows the OpenEnv/Gymnasium API with \texttt{reset()} and \texttt{step(action)} methods, returning structured observations after each action.
+
+The simulation models six interacting systems: (1) stochastic weather affecting customer demand, (2) price-sensitive customer behavior, (3) perishable inventory with expiration, (4) a reputation system with delayed feedback, (5) multiple locations with distinct economic properties, and (6) purchasable upgrades that modify game dynamics.
+
+\subsection{State Space}
+\label{sec:state}
+
+Each observation $o_t$ contains approximately 35 fields organized into logical groups. Table~\ref{tab:observation} summarizes the key components.
+
+\begin{table}[h]
+\centering
+\caption{LemonadeBench Observation Space}
+\label{tab:observation}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Category} & \textbf{Fields} & \textbf{Description} \\
+\midrule
+\textbf{Temporal} & \texttt{day}, \texttt{days\_remaining} & Current day (1--14) and remaining days \\
+\textbf{Weather} & \texttt{weather}, \texttt{temperature} & Current conditions (5 types, 50--105°F) \\
+ & \texttt{weather\_forecast} & Tomorrow's predicted weather \\
+\midrule
+\textbf{Financial} & \texttt{cash} & Current cash balance (cents) \\
+ & \texttt{daily\_revenue}, \texttt{daily\_costs} & Today's income and expenses \\
+ & \texttt{daily\_profit}, \texttt{total\_profit} & Daily and cumulative profit \\
+\midrule
+\textbf{Sales} & \texttt{cups\_sold}, \texttt{customers\_served} & Successful transactions \\
+ & \texttt{customers\_turned\_away} & Lost sales due to stockouts \\
+\midrule
+\textbf{Inventory} & \texttt{lemons}, \texttt{sugar\_bags} & Current stock levels \\
+ & \texttt{cups\_available}, \texttt{ice\_bags} & Consumable supplies \\
+ & \texttt{lemons\_expiring\_tomorrow} & Perishables at risk \\
+ & \texttt{lemons\_spoiled}, \texttt{ice\_melted} & Yesterday's losses \\
+\midrule
+\textbf{Reputation} & \texttt{reputation} & Customer perception (0.0--1.0) \\
+ & \texttt{customer\_satisfaction} & Today's satisfaction score \\
+\midrule
+\textbf{Location} & \texttt{current\_location} & Active location (4 options) \\
+ & \texttt{location\_catalog} & All locations with properties \\
+\midrule
+\textbf{Upgrades} & \texttt{owned\_upgrades} & Purchased improvements \\
+ & \texttt{upgrade\_catalog} & Available purchases \\
+\midrule
+\textbf{Intelligence} & \texttt{market\_hints} & Demand forecasts, price curves \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \texttt{market\_hints} field provides agents with actionable intelligence: estimated foot traffic ranges, price-to-conversion curves, revenue projections at each price point, and the current limiting resource for production. This transparency allows evaluation of strategic reasoning rather than reward hacking.
+
+\subsection{Action Space}
+\label{sec:actions}
+
+Each action $a_t$ consists of eight parameters controlling daily operations:
+
+\begin{table}[h]
+\centering
+\caption{LemonadeBench Action Space}
+\label{tab:action}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Type} & \textbf{Range} & \textbf{Description} \\
+\midrule
+\texttt{price\_per\_cup} & int & 1--500 & Price in cents (e.g., 75 = \$0.75) \\
+\texttt{buy\_lemons} & int & $\geq 0$ & Lemons to purchase (bulk discounts apply) \\
+\texttt{buy\_sugar} & int & $\geq 0$ & Sugar bags to purchase \\
+\texttt{buy\_cups} & int & $\geq 0$ & Disposable cups to purchase \\
+\texttt{buy\_ice} & int & $\geq 0$ & Ice bags to purchase (melts overnight) \\
+\texttt{advertising\_spend} & int & $\geq 0$ & Marketing budget in cents \\
+\texttt{buy\_upgrade} & str & \{cooler, null\} & One-time equipment purchase \\
+\texttt{location} & str & \{park, downtown, & Location for the day \\
+ & & mall, pool, null\} & (null = stay at current) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Only \texttt{price\_per\_cup} is required; all other parameters default to zero or null. Lemonade is produced \emph{on-demand} as customers arrive---agents do not pre-commit to production quantities, simplifying the decision space while maintaining inventory management complexity.
+
+\paragraph{Action Validation.}
+Actions are validated before execution. Invalid actions (e.g., purchases exceeding available cash) return an error response instead of advancing the day, allowing the agent up to 3 retry attempts per day. This design choice provides explicit feedback rather than silent failure, tests whether agents can correct mistakes given clear error messages, and enables measurement of ``constraint understanding''---a key reasoning capability. Error attempts are logged but do not consume game days, ensuring fair comparison across agents with different error rates.
+
+\subsection{Environment Dynamics}
+\label{sec:dynamics}
+
+\paragraph{Weather System.}
+Weather is sampled stochastically each day from five conditions with fixed probabilities: Hot (20\%), Sunny (35\%), Cloudy (25\%), Rainy (15\%), and Stormy (5\%). Each condition has an associated temperature range and demand multiplier (Table~\ref{tab:weather}). Critically, all randomness is pre-generated at episode start using a seed, ensuring identical weather sequences across runs with the same seed.
+
+\begin{table}[h]
+\centering
+\caption{Weather Conditions and Effects}
+\label{tab:weather}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Weather} & \textbf{Temp (°F)} & \textbf{Demand Mult.} & \textbf{Effect} \\
+\midrule
+Hot & 90--105 & 1.8$\times$ & Peak demand, ice bonus active \\
+Sunny & 75--90 & 1.3$\times$ & Above-average demand \\
+Cloudy & 65--80 & 0.9$\times$ & Slightly below average \\
+Rainy & 55--70 & 0.4$\times$ & Low foot traffic \\
+Stormy & 50--65 & 0.1$\times$ & Near-zero customers \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Customer Demand Model.}
+Demand follows a two-stage funnel:
+
+\begin{equation}
+\text{Demand} = \underbrace{\text{FootTraffic}(w, \ell, r, a)}_{\text{visitors}} \times \underbrace{\text{Conversion}(p, w, i)}_{\text{purchase rate}}
+\end{equation}
+
+\noindent where $w$ is weather, $\ell$ is location, $r$ is reputation, $a$ is advertising spend, $p$ is price, and $i$ indicates ice availability.
+
+Foot traffic is computed as:
+\begin{equation}
+\text{FootTraffic} = \text{BaseCustomers} \times \text{LocationMult} \times \text{WeatherMult} \times (0.5 + r) \times \text{AdBonus} \times \epsilon
+\end{equation}
+\noindent where $\epsilon \sim \mathcal{U}(0.9, 1.1)$ adds daily variance (pre-computed per seed).
+
+Conversion rate decreases with price above the optimal point (\$0.50):
+\begin{equation}
+\text{Conversion} = 0.95 \times \max\left(0.1, 1 - \left(\frac{p - 50}{100}\right)^{0.7} \times s \times 50\right)
+\end{equation}
+\noindent where $s$ is the location's price sensitivity. On hot days, ice provides a 20\% conversion bonus.
+
+\paragraph{Perishable Inventory.}
+Lemons expire after 3 days using FIFO consumption. Ice melts completely overnight unless the agent owns a Cooler upgrade (which preserves 50\%). This creates pressure to forecast demand accurately---overbuying results in spoilage losses.
+
+\paragraph{Reputation System.}
+Reputation $r_t$ evolves as an exponential moving average:
+\begin{equation}
+r_{t+1} = 0.8 \cdot r_t + 0.2 \cdot s_t
+\end{equation}
+\noindent where $s_t$ is today's customer satisfaction (based on pricing and stockout rate). This delayed feedback rewards consistent performance over short-term exploitation.
+
+\paragraph{Locations.}
+Four locations offer strategic tradeoffs (Table~\ref{tab:locations}). Switching locations incurs a one-time permit fee.
+
+\begin{table}[h]
+\centering
+\caption{Location Properties}
+\label{tab:locations}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Location} & \textbf{Traffic} & \textbf{Price Sens.} & \textbf{Weather Exp.} & \textbf{Permit} \\
+\midrule
+Park & 1.2$\times$ & 0.018 & 1.0$\times$ & Free \\
+Downtown & 1.0$\times$ & 0.012 & 0.7$\times$ & \$10.00 \\
+Mall & 0.7$\times$ & 0.008 & 0.0$\times$ & \$15.00 \\
+Pool & 0.9$\times$ & 0.020/0.010* & 1.8$\times$ & \$2.50 \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small *Pool uses reduced price sensitivity (0.010) on hot/sunny days.
+\end{flushleft}
+\end{table}
+
+\paragraph{Reward Structure.}
+The reward at each step is daily profit divided by 100 (converting cents to dollars). At episode end, a bonus of $\text{total\_profit} / 1000$ encourages long-term optimization over myopic daily gains.

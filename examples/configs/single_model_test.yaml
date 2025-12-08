@@ -1,0 +1,16 @@
+# Single model test - DeepSeek Chat
+# Run with: lemonade batch examples/single_model_test.yaml --parallel 5
+
+name: "DeepSeek Chat Test Run"
+
+models:
+  - provider: openrouter
+    name: deepseek/deepseek-chat
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [deepseek, chat, value, test]
+    tools: []
+
+logging:
+  local: true
+  supabase: true
+  dir: ./runs

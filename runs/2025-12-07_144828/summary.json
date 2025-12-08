@@ -1,0 +1,12 @@
+{
+  "total_profit": -2000,
+  "total_cups_sold": 225,
+  "final_cash": 0,
+  "final_reputation": 0.5271013022343538,
+  "turns": 14,
+  "model_name": "anthropic/claude-3.5-haiku",
+  "provider": "openrouter",
+  "total_input_tokens": 70386,
+  "total_output_tokens": 3027,
+  "estimated_cost_usd": 0.0684168
+}

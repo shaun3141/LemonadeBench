@@ -1,0 +1,145 @@
+\section{Model Versions}
+\label{app:versions}
+
+All experiments were conducted in December 2025 using OpenRouter as a unified API gateway to access models from multiple providers. This approach ensures consistent API behavior and enables reproducible comparisons across providers.
+
+\subsection{Model Selection Criteria}
+
+We selected 20 models across five tiers based on:
+\begin{enumerate}
+    \item \textbf{Agentic capability}: Demonstrated tool/function calling support
+    \item \textbf{Reasoning benchmarks}: Performance on MATH-500, ARC-AGI, SWE-Bench
+    \item \textbf{Cost diversity}: Range from \$0.075/M to \$75/M tokens
+    \item \textbf{Accessibility}: Including open-source options for reproducibility
+    \item \textbf{Provider diversity}: Representation from 7 providers
+\end{enumerate}
+
+\subsection{Evaluated Models}
+
+\begin{table}[h]
+\centering
+\caption{Complete Model Specifications}
+\label{tab:versions}
+\small
+\begin{tabular}{@{}llrrl@{}}
+\toprule
+\textbf{Model} & \textbf{Provider} & \textbf{Input/M} & \textbf{Output/M} & \textbf{Tier} \\
+\midrule
+\multicolumn{5}{l}{\emph{Tier 1: Premium Reasoning}} \\
+claude-sonnet-4 & Anthropic & \$3.00 & \$15.00 & Premium \\
+claude-opus-4.5 & Anthropic & \$15.00 & \$75.00 & Premium \\
+o1 & OpenAI & \$15.00 & \$60.00 & Premium \\
+gpt-5.1 & OpenAI & \$5.00 & \$15.00 & Premium \\
+gemini-3-pro & Google & \$2.50 & \$15.00 & Premium \\
+\midrule
+\multicolumn{5}{l}{\emph{Tier 2: Balanced Performance}} \\
+claude-3.5-sonnet & Anthropic & \$3.00 & \$15.00 & Balanced \\
+o3-mini & OpenAI & \$1.10 & \$4.40 & Balanced \\
+gemini-2.5-flash & Google & \$0.30 & \$2.50 & Balanced \\
+grok-2 & X.AI & \$5.00 & \$10.00 & Balanced \\
+\midrule
+\multicolumn{5}{l}{\emph{Tier 3: Cost-Effective}} \\
+deepseek-r1 & DeepSeek & \$0.55 & \$2.19 & Value \\
+deepseek-v3 & DeepSeek & \$0.27 & \$1.10 & Value \\
+qwq-32b & Qwen & \$0.20 & \$0.20 & Value \\
+mistral-small-3 & Mistral & \$0.10 & \$0.30 & Value \\
+\midrule
+\multicolumn{5}{l}{\emph{Tier 4: Open Source}} \\
+llama-3.3-70b-instruct & Meta & \$0.40 & \$0.40 & Open \\
+llama-3.1-405b-instruct & Meta & \$2.00 & \$2.00 & Open \\
+qwen-2.5-72b-instruct & Qwen & \$0.35 & \$0.40 & Open \\
+mistral-large & Mistral & \$2.00 & \$6.00 & Open \\
+\midrule
+\multicolumn{5}{l}{\emph{Tier 5: Fast \& Efficient}} \\
+claude-3.5-haiku & Anthropic & \$0.80 & \$4.00 & Fast \\
+gpt-4o-mini & OpenAI & \$0.15 & \$0.60 & Fast \\
+gemini-flash-1.5 & Google & \$0.075 & \$0.30 & Fast \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small Prices in USD per million tokens via OpenRouter (December 2025).
+\end{flushleft}
+\end{table}
+
+\subsection{Model Capabilities}
+
+Table~\ref{tab:model-capabilities} summarizes key capabilities relevant to the LemonadeBench task.
+
+\begin{table}[h]
+\centering
+\caption{Model Capabilities for Agentic Tasks}
+\label{tab:model-capabilities}
+\small
+\begin{tabular}{@{}lcccr@{}}
+\toprule
+\textbf{Model} & \textbf{Tool Calling} & \textbf{Context} & \textbf{Reasoning} & \textbf{MATH-500} \\
+\midrule
+claude-opus-4.5 & \checkmark & 200K & Extended & --- \\
+claude-sonnet-4 & \checkmark & 200K & Standard & --- \\
+o1 & \checkmark & 200K & CoT & 94.8\% \\
+o3-mini & \checkmark & 200K & CoT & --- \\
+gpt-5.1 & \checkmark & 200K & Extended & --- \\
+gemini-3-pro & \checkmark & 2M & Extended & --- \\
+deepseek-r1 & \checkmark & 64K & CoT & 97.3\% \\
+deepseek-v3 & \checkmark & 128K & Standard & 92.5\% \\
+qwq-32b & \checkmark & 32K & CoT & --- \\
+llama-3.3-70b & \checkmark & 128K & Standard & --- \\
+llama-3.1-405b & \checkmark & 128K & Standard & --- \\
+qwen-2.5-72b & \checkmark & 128K & Standard & --- \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small CoT = Chain-of-Thought reasoning. MATH-500 scores from model release papers where available.
+\end{flushleft}
+\end{table}
+
+\subsection{API Configuration}
+
+All models were accessed via OpenRouter's unified API:
+\begin{itemize}
+    \item \textbf{Base URL}: \texttt{https://openrouter.ai/api/v1}
+    \item \textbf{Max tokens}: 1024 per response
+    \item \textbf{Temperature}: Default (model-specific)
+    \item \textbf{Tool choice}: Required (forced function calling)
+\end{itemize}
+
+\subsection{Cost Analysis}
+
+Total evaluation cost across 100 episodes (20 models $\times$ 5 seeds):
+
+\begin{table}[h]
+\centering
+\caption{Estimated Evaluation Cost by Tier}
+\label{tab:cost}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Tier} & \textbf{Models} & \textbf{Episodes} & \textbf{Est. Cost} \\
+\midrule
+Premium & 5 & 25 & \$8--12 \\
+Balanced & 4 & 20 & \$2--4 \\
+Value & 4 & 20 & \$0.50--1 \\
+Open Source & 4 & 20 & \$1--2 \\
+Fast & 3 & 15 & \$0.30--0.50 \\
+\midrule
+\textbf{Total} & 20 & 100 & \$12--20 \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\small Estimates based on ~2000 input tokens and ~500 output tokens per turn, 14 turns per episode.
+\end{flushleft}
+\end{table}
+
+\subsection{Reproducibility}
+
+To reproduce our experiments:
+
+\begin{enumerate}
+    \item Obtain an OpenRouter API key at \texttt{https://openrouter.ai/keys}
+    \item Set environment variable: \texttt{export OPENROUTER\_API\_KEY="your-key"}
+    \item Run the batch configuration:
+    \begin{verbatim}
+    lemonade batch examples/batch_config.yaml --parallel 4
+    \end{verbatim}
+\end{enumerate}
+
+The exact configuration file is included in the supplementary materials and available at the project repository.

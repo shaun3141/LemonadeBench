@@ -1,0 +1,220 @@
+# LemonadeBench Comprehensive Model Evaluation
+# December 2025 Model Suite
+# Run with: lemonade batch examples/batch_config.yaml --parallel 4
+#
+# This configuration evaluates 20 models across different tiers:
+# - Tier 1: Premium reasoning models (best expected performance)
+# - Tier 2: Balanced performance/cost
+# - Tier 3: Cost-effective alternatives
+# - Tier 4: Open-source models
+# - Tier 5: Fast/efficient models
+#
+# Total runs: 20 models × 5 seeds = 100 episodes
+# Estimated cost: ~$15-25 (varies by model)
+
+name: "LemonadeBench Dec 2025 - Comprehensive Model Evaluation"
+
+models:
+  # ===========================================================================
+  # TIER 1: Premium Reasoning Models
+  # Best expected performance for agentic tasks
+  # ===========================================================================
+  
+  # Anthropic Claude - Top performer for autonomous tasks
+  - provider: openrouter
+    name: anthropic/claude-sonnet-4
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier1, anthropic, sonnet, premium]
+    tools: []
+  
+  - provider: openrouter
+    name: anthropic/claude-opus-4.5
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier1, anthropic, opus, premium]
+    tools: []
+  
+  # OpenAI - Strong reasoning models
+  - provider: openrouter
+    name: openai/o1
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier1, openai, reasoning, premium]
+    tools: []
+  
+  - provider: openrouter
+    name: openai/gpt-5.1
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier1, openai, gpt5, premium]
+    tools: []
+  
+  # Google Gemini - Top multimodal reasoning
+  - provider: openrouter
+    name: google/gemini-3-pro
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier1, google, gemini, premium]
+    tools: []
+
+  # ===========================================================================
+  # TIER 2: Balanced Performance/Cost
+  # Strong performance at moderate cost
+  # ===========================================================================
+  
+  # Anthropic - Great balance
+  - provider: openrouter
+    name: anthropic/claude-3.5-sonnet
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier2, anthropic, sonnet, balanced]
+    tools: []
+  
+  # OpenAI - Efficient reasoning
+  - provider: openrouter
+    name: openai/o3-mini
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier2, openai, reasoning, balanced]
+    tools: []
+  
+  # Google Gemini 2.5 Flash
+  - provider: openrouter
+    name: google/gemini-2.5-flash
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier2, google, gemini, balanced]
+    tools: []
+  
+  # X.AI Grok
+  - provider: openrouter
+    name: x-ai/grok-2
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier2, xai, grok, balanced]
+    tools: []
+
+  # ===========================================================================
+  # TIER 3: Cost-Effective Reasoning
+  # Best value - strong reasoning at low cost
+  # ===========================================================================
+  
+  # DeepSeek R1 - Exceptional reasoning, MIT licensed, very cheap
+  - provider: openrouter
+    name: deepseek/deepseek-r1
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier3, deepseek, reasoning, value]
+    tools: []
+  
+  # DeepSeek V3 - Latest flagship, rivals GPT-5
+  - provider: openrouter
+    name: deepseek/deepseek-v3
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier3, deepseek, v3, value]
+    tools: []
+  
+  # Qwen QwQ - Reasoning specialist
+  - provider: openrouter
+    name: qwen/qwq-32b
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier3, qwen, reasoning, value]
+    tools: []
+  
+  # Mistral Small - Fast and cheap
+  - provider: openrouter
+    name: mistralai/mistral-small-3
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier3, mistral, small, value]
+    tools: []
+
+  # ===========================================================================
+  # TIER 4: Open Source Models
+  # Accessible to all researchers
+  # ===========================================================================
+  
+  # Meta Llama 3.3 70B - Open source leader
+  - provider: openrouter
+    name: meta-llama/llama-3.3-70b-instruct
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier4, meta, llama, opensource]
+    tools: []
+  
+  # Meta Llama 3.1 405B - Largest open model
+  - provider: openrouter
+    name: meta-llama/llama-3.1-405b-instruct
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier4, meta, llama, opensource, large]
+    tools: []
+  
+  # Qwen 2.5 72B - Strong multilingual
+  - provider: openrouter
+    name: qwen/qwen-2.5-72b-instruct
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier4, qwen, opensource]
+    tools: []
+  
+  # Mistral Large
+  - provider: openrouter
+    name: mistralai/mistral-large
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier4, mistral, large, opensource]
+    tools: []
+
+  # ===========================================================================
+  # TIER 5: Fast & Efficient Models
+  # Optimized for speed and low latency
+  # ===========================================================================
+  
+  # Anthropic Haiku - Fast and capable
+  - provider: openrouter
+    name: anthropic/claude-3.5-haiku
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier5, anthropic, haiku, fast]
+    tools: []
+  
+  # OpenAI Mini - Very fast
+  - provider: openrouter
+    name: openai/gpt-4o-mini
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier5, openai, mini, fast]
+    tools: []
+  
+  # Google Gemini Flash 1.5 - Speed optimized
+  - provider: openrouter
+    name: google/gemini-flash-1.5
+    seeds: [1, 42, 100, 7, 2025]
+    tags: [tier5, google, flash, fast]
+    tools: []
+
+logging:
+  local: true      # Save runs to local filesystem
+  supabase: true   # Also log to Supabase (if configured)
+  dir: ./runs      # Local output directory
+
+# ===========================================================================
+# MODEL SUMMARY (20 models)
+# ===========================================================================
+#
+# Tier 1 - Premium ($1-15/M tokens):
+#   1. anthropic/claude-sonnet-4        - Best all-around agentic
+#   2. anthropic/claude-opus-4.5        - Best long autonomous tasks (Nov 2025)
+#   3. openai/o1                        - Strong reasoning
+#   4. openai/gpt-5.1                   - OpenAI flagship (Dec 2025)
+#   5. google/gemini-3-pro              - Top multimodal (Dec 2025)
+#
+# Tier 2 - Balanced ($1-6/M tokens):
+#   6. anthropic/claude-3.5-sonnet      - Great value
+#   7. openai/o3-mini                   - Efficient reasoning
+#   8. google/gemini-2.5-flash          - Fast + capable
+#   9. x-ai/grok-2                      - Alternative frontier
+#
+# Tier 3 - Value ($0.14-2.19/M tokens):
+#   10. deepseek/deepseek-r1            - Best value reasoning (97% MATH-500)
+#   11. deepseek/deepseek-v3            - Latest flagship, rivals GPT-5 (Dec 2025)
+#   12. qwen/qwq-32b                    - Reasoning specialist
+#   13. mistralai/mistral-small-3       - Fast & cheap
+#
+# Tier 4 - Open Source ($0.20-2/M tokens):
+#   14. meta-llama/llama-3.3-70b        - Open source leader
+#   15. meta-llama/llama-3.1-405b       - Largest open model
+#   16. qwen/qwen-2.5-72b-instruct      - Strong multilingual
+#   17. mistralai/mistral-large         - European alternative
+#
+# Tier 5 - Fast ($0.075-4/M tokens):
+#   18. anthropic/claude-3.5-haiku      - Fast + smart
+#   19. openai/gpt-4o-mini              - Very fast
+#   20. google/gemini-flash-1.5         - Speed champion
+#
+# ===========================================================================

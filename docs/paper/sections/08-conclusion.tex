@@ -1,0 +1,44 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced LemonadeBench, a benchmark for evaluating LLM agents on multi-day sequential business decision-making. Our key contributions include:
+
+\begin{enumerate}
+    \item A novel, interpretable environment requiring sustained strategic reasoning across 14 days with compounding decisions, perishable inventory, and stochastic weather.
+    
+    \item The first systematic study of goal-framing effects on LLM economic behavior, testing six conditions inspired by behavioral economics.
+    
+    \item Empirical evaluation of six frontier models revealing [key finding about model performance].
+    
+    \item Evidence that [key finding about framing effects], with implications for agent deployment and prompt engineering.
+\end{enumerate}
+
+Our results suggest that while current LLMs can engage in business reasoning, they [struggle with / show promise in] maintaining coherent long-horizon strategies. The sensitivity of agent behavior to goal framing raises important questions about the reliability of LLM agents in high-stakes decision contexts---and opportunities for steering agent behavior through careful prompt design.
+
+LemonadeBench is publicly available at \url{https://github.com/Shaun3141/LemonadeBench}, including the environment, evaluation harness, all experimental data, and an interactive web client for human comparison.
+
+\section*{Broader Impact Statement}
+
+This work studies how LLM agents make economic decisions and how prompt framing influences their behavior. We identify both positive impacts and potential risks.
+
+\paragraph{Positive Impacts.}
+\begin{itemize}
+    \item \textbf{Safer agent deployment}: Understanding agent economic biases \emph{before} deployment in real-world systems (e.g., automated trading, supply chain management) can prevent costly failures.
+    \item \textbf{Alignment research}: Our findings on goal-framing effects contribute to understanding how LLMs interpret and act on objectives---a core challenge in AI alignment.
+    \item \textbf{Educational value}: The interpretable lemonade stand domain provides an accessible testbed for teaching agent evaluation and behavioral economics concepts.
+\end{itemize}
+
+\paragraph{Potential Risks.}
+\begin{itemize}
+    \item \textbf{Manipulation of agent systems}: Knowledge of how goal framing affects agent behavior could be exploited to manipulate LLM-based systems (e.g., crafting prompts that induce excessive risk-taking in trading agents).
+    \item \textbf{Overconfidence in benchmarks}: Strong performance on LemonadeBench does not guarantee safe behavior in more complex real-world economic environments.
+    \item \textbf{Anthropomorphization}: Describing LLM behavior in terms of ``risk aversion'' or ``competitive drive'' may incorrectly suggest human-like cognition.
+\end{itemize}
+
+\paragraph{Mitigations.}
+Our benchmark is explicitly designed as a low-stakes simulation with no real-world financial consequences. We emphasize throughout the paper that findings may not transfer to production systems without further validation. We release all code and data to enable scrutiny and reproducibility.
+
+\section*{Acknowledgments}
+
+% TODO: Acknowledgments
+

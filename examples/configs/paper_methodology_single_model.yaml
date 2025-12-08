@@ -1,0 +1,107 @@
+# LemonadeBench Paper Methodology - Single Model Test
+#
+# A lightweight version of the full paper methodology for quick testing.
+# Uses GPT-4o-mini (fast & cheap) to validate the experimental setup.
+#
+# This configuration runs:
+#   1. Goal-Framing: 1 model × 6 conditions × 5 seeds = 30 episodes
+#   2. Architecture: 1 model × 4 architectures × 5 seeds = 20 episodes
+#   3. Scaffolding: 1 model × 4 scaffolds × 5 seeds = 20 episodes
+#
+# Total: 70 episodes
+# Estimated cost: ~$0.50-1.00
+# Estimated time: ~10-15 minutes with --parallel 4
+#
+# Run with: lemonade batch examples/paper_methodology_single_model.yaml --parallel 4
+
+name: "Paper Methodology - Single Model Test (Claude Opus 4.5)"
+
+# =============================================================================
+# STUDY 1: GOAL-FRAMING EXPERIMENT (Single Model)
+# =============================================================================
+experiment:
+  provider: openrouter  # Use OpenRouter for consistent API access
+  
+  models:
+    - anthropic/claude-opus-4.5
+  
+  seeds: [1, 42, 100, 7, 2025]
+  
+  goal_framings:
+    - baseline
+    - aggressive
+    - conservative
+    - competitive
+    - survival
+    - growth
+  
+  architectures: [react]
+  scaffoldings: [none]
+
+# =============================================================================
+# STUDY 2: ARCHITECTURE ABLATION (Single Model)
+# =============================================================================
+architecture_ablation:
+  provider: openrouter
+  
+  models:
+    - anthropic/claude-opus-4.5
+  
+  seeds: [1, 42, 100, 7, 2025]
+  
+  architectures:
+    - react
+    - plan_act
+    - act_reflect
+    - full
+  
+  goal_framings: [baseline]
+  scaffoldings: [none]
+
+# =============================================================================
+# STUDY 3: SCAFFOLDING ABLATION (Single Model)
+# =============================================================================
+scaffolding_ablation:
+  provider: openrouter
+  
+  models:
+    - anthropic/claude-opus-4.5
+  
+  seeds: [1, 42, 100, 7, 2025]
+  
+  scaffoldings:
+    - none
+    - calculator
+    - math_prompt
+    - code_interpreter
+  
+  architectures: [react]
+  goal_framings: [baseline]
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+logging:
+  local: true
+  supabase: true  # Enable cloud logging
+  dir: ./runs/paper_methodology_test
+
+# =============================================================================
+# SUMMARY
+# =============================================================================
+#
+# This single-model config is useful for:
+#   - Validating the experimental harness before full runs
+#   - Testing config parsing and episode generation
+#   - Quick sanity checks on goal framing / architecture / scaffolding
+#   - CI/CD integration tests
+#
+# Episode breakdown:
+#   - Goal Framing: 1 × 6 × 5 = 30 episodes
+#   - Architecture: 1 × 4 × 5 = 20 episodes
+#   - Scaffolding:  1 × 4 × 5 = 20 episodes
+#   - Total: 70 episodes
+#
+# After validation, run the full methodology:
+#   lemonade batch examples/paper_methodology.yaml --parallel 4
+#

@@ -1,0 +1,450 @@
+/* 2005 Retro Gaming Fonts - must be before tailwind imports */
+@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Quicksand:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Quicksand", system-ui, sans-serif;
+  --font-display: "Bungee", sans-serif;
+  --font-pixel: "Press Start 2P", monospace;
+
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-foreground: oklch(0.205 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: oklch(0.577 0.245 27.325);
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+
+  /* Lemonade theme colors */
+  --color-lemon: oklch(0.95 0.15 100);
+  --color-lemon-dark: oklch(0.75 0.18 95);
+  --color-sunny: oklch(0.9 0.12 85);
+  --color-hot: oklch(0.7 0.2 30);
+  --color-cloudy: oklch(0.7 0.02 250);
+  --color-rainy: oklch(0.5 0.1 240);
+  --color-stormy: oklch(0.35 0.05 260);
+
+  /* 2005 Retro Gaming Colors */
+  --color-retro-lemon: #FFE135;
+  --color-retro-orange: #FF6B35;
+  --color-retro-lime: #7FFF00;
+  --color-retro-pink: #FF1493;
+  --color-retro-sky: #00BFFF;
+  --color-retro-gold: #FFD700;
+  --color-retro-cherry: #FF4757;
+  --color-retro-grape: #9B59B6;
+  --color-retro-mint: #2ECC71;
+  --color-retro-brown: #8B4513;
+  --color-retro-dark-brown: #5D4037;
+  --color-retro-cream: #FFFDE7;
+}
+
+.dark {
+  --color-background: oklch(0.145 0 0);
+  --color-foreground: oklch(0.985 0 0);
+  --color-card: oklch(0.145 0 0);
+  --color-card-foreground: oklch(0.985 0 0);
+  --color-popover: oklch(0.145 0 0);
+  --color-popover-foreground: oklch(0.985 0 0);
+  --color-primary: oklch(0.985 0 0);
+  --color-primary-foreground: oklch(0.205 0 0);
+  --color-secondary: oklch(0.269 0 0);
+  --color-secondary-foreground: oklch(0.985 0 0);
+  --color-muted: oklch(0.269 0 0);
+  --color-muted-foreground: oklch(0.708 0 0);
+  --color-accent: oklch(0.269 0 0);
+  --color-accent-foreground: oklch(0.985 0 0);
+  --color-destructive: oklch(0.396 0.141 25.723);
+  --color-destructive-foreground: oklch(0.637 0.237 25.331);
+  --color-border: oklch(0.269 0 0);
+  --color-input: oklch(0.269 0 0);
+  --color-ring: oklch(0.439 0 0);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Quicksand', system-ui, sans-serif;
+  }
+}
+
+/* ============================================
+   2005 RETRO GAMING STYLE UTILITIES
+   ============================================ */
+
+/* Font utilities */
+.font-display {
+  font-family: 'Bungee', sans-serif;
+}
+
+.font-pixel {
+  font-family: 'Press Start 2P', cursive;
+}
+
+/* Retro text shadow utilities */
+.text-shadow-retro {
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.text-shadow-retro-dark {
+  text-shadow: 2px 2px 0 var(--color-retro-brown);
+}
+
+.text-shadow-retro-gold {
+  text-shadow: 2px 2px 0 #8B4513, -1px -1px 0 #FFA000;
+}
+
+/* Retro box shadow utilities */
+.shadow-retro {
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.8);
+}
+
+.shadow-retro-lg {
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.8);
+}
+
+.shadow-retro-brown {
+  box-shadow: 4px 4px 0 var(--color-retro-dark-brown);
+}
+
+/* Retro embossed effect for buttons */
+.shadow-emboss {
+  box-shadow: 
+    0 4px 0 var(--color-retro-brown),
+    0 6px 8px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.shadow-emboss:hover {
+  box-shadow: 
+    0 6px 0 var(--color-retro-brown),
+    0 8px 12px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+
+.shadow-emboss:active {
+  box-shadow: 
+    0 2px 0 var(--color-retro-brown),
+    0 3px 4px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Retro gradient backgrounds */
+.bg-retro-sunny {
+  background: linear-gradient(180deg, #87CEEB 0%, #FFE4B5 50%, #98FB98 100%);
+}
+
+.bg-retro-card {
+  background: linear-gradient(180deg, #FFFDE7 0%, #FFF9C4 100%);
+}
+
+.bg-retro-button {
+  background: linear-gradient(180deg, #FFE135 0%, #FFB300 50%, #FF8F00 100%);
+}
+
+.bg-retro-button-green {
+  background: linear-gradient(180deg, #7FFF00 0%, #32CD32 50%, #228B22 100%);
+}
+
+.bg-retro-button-pink {
+  background: linear-gradient(180deg, #FF69B4 0%, #FF1493 50%, #C71585 100%);
+}
+
+.bg-retro-button-blue {
+  background: linear-gradient(180deg, #00BFFF 0%, #1E90FF 50%, #0066CC 100%);
+}
+
+.bg-retro-gold {
+  background: linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+}
+
+.bg-retro-silver {
+  background: linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 50%, #A8A8A8 100%);
+}
+
+.bg-retro-bronze {
+  background: linear-gradient(180deg, #CD7F32 0%, #B87333 50%, #8B4513 100%);
+}
+
+/* Retro border utilities */
+.border-retro {
+  border: 3px solid var(--color-retro-brown);
+  border-radius: 12px;
+}
+
+.border-retro-thick {
+  border: 4px solid var(--color-retro-dark-brown);
+  border-radius: 16px;
+}
+
+/* ============================================
+   RETRO ANIMATIONS
+   ============================================ */
+
+/* Bounce animation */
+@keyframes retro-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.animate-retro-bounce {
+  animation: retro-bounce 0.5s ease-in-out;
+}
+
+.hover\:animate-retro-bounce:hover {
+  animation: retro-bounce 0.5s ease-in-out;
+}
+
+/* Wiggle animation for attention */
+@keyframes retro-wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.animate-retro-wiggle {
+  animation: retro-wiggle 0.3s ease-in-out infinite;
+}
+
+/* Sparkle/pulse animation */
+@keyframes retro-sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-retro-sparkle {
+  animation: retro-sparkle 1.5s ease-in-out infinite;
+}
+
+/* Coin spin animation */
+@keyframes retro-coin-spin {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+.animate-retro-coin {
+  animation: retro-coin-spin 0.6s ease-in-out;
+}
+
+/* Pop-in animation */
+@keyframes retro-pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-retro-pop {
+  animation: retro-pop-in 0.3s ease-out;
+}
+
+/* Float up animation (for money popups) */
+@keyframes retro-float-up {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-30px); opacity: 0; }
+}
+
+.animate-retro-float {
+  animation: retro-float-up 1s ease-out forwards;
+}
+
+/* Glow pulse animation */
+@keyframes retro-glow {
+  0%, 100% { box-shadow: 0 0 5px var(--color-retro-gold), 0 0 10px var(--color-retro-gold); }
+  50% { box-shadow: 0 0 15px var(--color-retro-gold), 0 0 25px var(--color-retro-gold); }
+}
+
+.animate-retro-glow {
+  animation: retro-glow 1.5s ease-in-out infinite;
+}
+
+/* Star burst effect */
+@keyframes retro-starburst {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 1; }
+}
+
+.animate-retro-starburst {
+  animation: retro-starburst 0.5s ease-out;
+}
+
+/* ============================================
+   RETRO COMPONENT STYLES
+   ============================================ */
+
+/* Retro stat display (pixel font) */
+.stat-retro {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  letter-spacing: -0.5px;
+}
+
+.stat-retro-money {
+  color: #1B5E20;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.stat-retro-positive {
+  color: #2E7D32;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.stat-retro-negative {
+  color: #C62828;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Retro badge styles */
+.badge-retro {
+  font-family: 'Fredoka One', cursive;
+  border: 2px solid;
+  border-radius: 999px;
+  padding: 4px 12px;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+/* Retro corner star decoration */
+.retro-star::before {
+  content: '★';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 24px;
+  color: var(--color-retro-gold);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}

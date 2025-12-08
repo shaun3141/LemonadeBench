@@ -1,0 +1,40 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Large Language Models (LLMs) are rapidly transitioning from text generation systems to autonomous agents deployed in complex, high-stakes environments \citep{liu2023agentbench}. Evaluating these agents requires moving beyond question-answering accuracy to assess their ability to reason about consequences, plan over multiple steps, and adapt to dynamic conditions---capabilities tested by emerging benchmarks for code generation (SWE-bench), web navigation (WebArena), and general tool use (AgentBench).
+
+However, existing benchmarks share a common limitation: they predominantly evaluate \emph{single-session task completion}. An agent either fixes a GitHub issue or it doesn't; it either navigates to the correct webpage or fails. While valuable, these evaluations miss a crucial dimension of intelligent behavior: \textbf{sustained decision-making over extended time horizons} where early choices constrain future possibilities through resource accumulation, reputation effects, and opportunity costs.
+
+Consider how humans run businesses: today's inventory purchase affects tomorrow's ability to serve customers; this week's pricing strategy shapes next month's brand perception; a capital investment now enables efficiency gains later. These temporal dependencies create rich optimization landscapes that require balancing exploration and exploitation, managing risk under uncertainty, and maintaining coherent strategies across many decision points.
+
+From a decision-theoretic perspective, such environments can be formalized as Partially Observable Markov Decision Processes (POMDPs) \citep{kaelbling1998planning} where optimal behavior requires reasoning about latent state (future weather), maintaining beliefs over long horizons, and solving the credit assignment problem---determining which past decisions led to current outcomes \citep{sutton2018reinforcement}. Behavioral economics further complicates the picture: human decision-makers exhibit systematic biases including loss aversion \citep{kahneman1979prospect}, herding behavior in financial markets, temporal discounting, and risk-seeking behavior under competitive pressure. A natural question arises: \emph{Do LLM agents exhibit similar biases? Can prompt engineering modulate these behaviors?} More fundamentally, if we frame an agent's objective as ``aggressive growth'' versus ``cautious survival,'' do we observe measurably different economic behaviors---and do these differences mirror human responses to comparable framings? These questions have direct implications for agent deployment: understanding how objective framing shapes behavior is critical for aligning agent actions with user intentions.
+
+The need for such evaluation is pressing. As of late 2024, LLM agents are being deployed in production systems for inventory management, pricing optimization, and resource allocation. Yet we lack systematic understanding of how these agents behave under extended decision horizons, how sensitive they are to objective framing, or whether their strategies exhibit coherence over time. Before widespread deployment in economic contexts, we need benchmarks that test these capabilities rigorously.
+
+We introduce \textbf{LemonadeBench}, a benchmark designed to evaluate LLM agents on exactly these capabilities. The environment simulates operating a lemonade stand over a 14-day summer season, requiring daily decisions about:
+
+\begin{itemize}
+    \item \textbf{Weather adaptation} --- adjusting strategy based on stochastic conditions
+    \item \textbf{Pricing strategy} --- balancing profit margins against customer conversion
+    \item \textbf{Inventory management} --- procuring supplies while avoiding spoilage of perishables
+    \item \textbf{Location selection} --- choosing venues with different risk/reward profiles
+    \item \textbf{Capital allocation} --- investing in upgrades vs.\ maintaining liquidity
+\end{itemize}
+
+The lemonade stand domain is deliberately chosen for its \textbf{interpretability}. Unlike abstract game environments or domain-specific code tasks, every action maps to intuitions that humans universally understand: ``buy more lemons,'' ``raise the price,'' ``move to a busier location.'' This transparency enables qualitative analysis of agent reasoning failures and facilitates human baseline comparisons.
+
+\paragraph{Contributions.} We make the following contributions:
+
+\begin{enumerate}
+    \item \textbf{A novel research finding on prompt-induced behavioral modulation}: We conduct the first systematic study showing that goal-framing prompts reliably alter LLM agent economic behavior, with effects comparable to [insert effect size once you have results]. This has direct implications for agent alignment and deployment.
+    
+    \item \textbf{A new benchmark environment}: LemonadeBench is a multi-day sequential business decision-making benchmark featuring compounding decisions, perishable inventory, stochastic weather, and delayed reputation feedback---properties absent from existing agent evaluations.
+    
+    \item \textbf{Comprehensive architectural analysis}: We evaluate four agent loop structures (React, Plan-Act, Act-Reflect, Full) and three cognitive scaffolding approaches (calculator tools, math prompts, code interpreters) to identify which interventions improve long-horizon reasoning.
+    
+    \item \textbf{Large-scale empirical study}: We evaluate 20 frontier models across 1,000 episodes with rigorous statistical analysis, establishing performance baselines and identifying failure modes.
+    
+    \item \textbf{Open-source release}: We release the environment, evaluation harness, web-based visualization client, and all experimental data to enable reproducible research.\footnote{Available at \url{https://github.com/Shaun3141/LemonadeBench}}
+\end{enumerate}
+
+Our evaluation reveals [preview one surprising finding once you have results], with implications for both agent deployment practices and our understanding of LLM decision-making. The remainder of this paper is structured as follows: Section 2 reviews related work, Section 3 describes the LemonadeBench environment in detail, Section 4 presents our evaluation methodology, and Sections 5--7 report results, discuss implications, and conclude.

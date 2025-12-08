@@ -1,0 +1,73 @@
+\section{Reproducibility Checklist}
+\label{app:reproducibility}
+
+We provide detailed information to enable full reproducibility of our experiments.
+
+\subsection{Code and Data Availability}
+
+\begin{itemize}
+    \item \textbf{Repository}: \url{https://github.com/Shaun3141/LemonadeBench}
+    \item \textbf{License}: BSD-3-Clause (permissive open source)
+    \item \textbf{Environment code}: \texttt{lemonade\_bench/server/lemonade\_environment.py}
+    \item \textbf{Agent implementations}: \texttt{lemonade\_bench/agents/}
+    \item \textbf{Evaluation harness}: \texttt{lemonade\_bench/harness/}
+    \item \textbf{Raw experimental data}: Available in repository under \texttt{runs/}
+    \item \textbf{Analysis notebooks}: Jupyter notebooks for reproducing all figures and tables
+\end{itemize}
+
+\subsection{Compute Requirements}
+
+\begin{itemize}
+    \item \textbf{Environment}: Runs on any machine with Python 3.11+; no GPU required
+    \item \textbf{Episode runtime}: $<$1 second per episode (environment only); 30--120 seconds with LLM API calls
+    \item \textbf{Total API cost}: Approximately \$[XXX] for all 960 episodes
+    \item \textbf{Human baseline collection}: Approximately \$[XXX] for 60 human episodes (20 participants $\times$ 3 episodes)
+\end{itemize}
+
+\subsection{Hyperparameters}
+
+\begin{table}[h]
+\centering
+\caption{Hyperparameters Used Across All Experiments}
+\label{tab:hyperparams}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\multicolumn{2}{l}{\emph{Environment}} \\
+Season length & 14 days \\
+Starting cash & \$20.00 (2000 cents) \\
+Random seeds (LLM) & 1--20 \\
+Random seeds (Human) & 21--40 \\
+\midrule
+\multicolumn{2}{l}{\emph{LLM Settings}} \\
+Temperature & 0.7 \\
+Max tokens & 1024 \\
+Tool choice & Forced (\texttt{take\_action}) \\
+Retry on error & Up to 3 attempts \\
+\midrule
+\multicolumn{2}{l}{\emph{Evaluation}} \\
+Episodes per condition & 20 (one per seed) \\
+Statistical tests & Paired $t$-test \\
+Multiple comparison correction & Bonferroni \\
+Significance threshold & $\alpha = 0.05$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Model Access}
+
+All models were accessed via official APIs during [DATE RANGE]. We report exact model version strings in Table~\ref{tab:versions}. Note that API-served models may be updated by providers; we cannot guarantee identical behavior for future runs.
+
+\subsection{Evaluation Protocol}
+
+To reproduce our main results:
+\begin{enumerate}
+    \item Clone the repository and install dependencies: \texttt{uv pip install -e .}
+    \item Set API keys: \texttt{export ANTHROPIC\_API\_KEY=...} (and similar for OpenAI, Google)
+    \item Run evaluation: \texttt{lemonade batch configs/main\_experiment.yaml}
+    \item Generate figures: \texttt{jupyter notebook analysis/generate\_figures.ipynb}
+\end{enumerate}
+
+Expected runtime for full replication: approximately [X] hours and \$[XXX] in API costs.
+
