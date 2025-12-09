@@ -12,7 +12,7 @@
 # Estimated cost: ~$0.50-1.00
 # Estimated time: ~10-15 minutes with --parallel 4
 #
-# Run with: lemonade batch examples/paper_methodology_single_model.yaml --parallel 4
+# Run with: lemonade batch examples/configs/paper_methodology_single_model.yaml --parallel 4
 
 name: "Paper Methodology - Single Model Test (Claude Opus 4.5)"
 
@@ -103,5 +103,5 @@ logging:
 #   - Total: 70 episodes
 #
 # After validation, run the full methodology:
-#   lemonade batch examples/paper_methodology.yaml --parallel 4
+#   lemonade batch examples/configs/paper_methodology.yaml --parallel 4
 #

@@ -10,6 +10,7 @@ providers (Anthropic, OpenAI, OpenRouter, etc.) for the LLM-powered agent.
 
 from .base import LLMProvider, ToolResponse, TokenUsage
 from .anthropic import AnthropicProvider
+from .model_registry import ModelRegistry, ModelInfo, ValidationResult, validate_models_or_raise
 
 # OpenAI is optional - only import if the package is available
 try:
@@ -34,4 +35,8 @@ __all__ = [
     "AnthropicProvider",
     "OpenAIProvider",
     "OpenRouterProvider",
+    "ModelRegistry",
+    "ModelInfo",
+    "ValidationResult",
+    "validate_models_or_raise",
 ]

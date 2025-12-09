@@ -378,11 +378,13 @@ class Runner:
         use_supabase: bool = True,
         parallel: int = 1,
         skip_existing: bool = True,
+        validate_models: bool = True,
     ):
         self.output_dir = output_dir
         self.use_supabase = use_supabase
         self.parallel = parallel
         self.skip_existing = skip_existing
+        self.validate_models = validate_models
         
         # Initialize Supabase logger for existence checks
         self._supabase_logger = None
@@ -416,6 +418,48 @@ class Runner:
             completed_only=completed_only,
         )
     
+    def _validate_models_preflight(self, model_ids: list[str], console: Console) -> None:
+        """
+        Pre-flight validation of all models before starting batch.
+        
+        Checks that all models exist on OpenRouter and support function calling.
+        Fails fast with helpful error messages instead of failing mid-batch.
+        
+        Args:
+            model_ids: List of model IDs to validate
+            console: Console for output
+            
+        Raises:
+            ValueError: If any models are invalid
+        """
+        from ..agents.providers.model_registry import ModelRegistry
+        
+        console.print("[dim]Validating models against OpenRouter API...[/dim]")
+        
+        registry = ModelRegistry()
+        valid, failed = registry.validate_batch(model_ids, require_tools=True)
+        
+        if failed:
+            console.print(f"\n[red bold]✗ Model validation failed![/red bold]")
+            console.print(f"[red]Found {len(failed)} invalid model(s):[/red]\n")
+            
+            for result in failed:
+                console.print(f"  [red]✗[/red] [bold]{result.model_id}[/bold]")
+                if result.error_message:
+                    # Show first line of error
+                    first_line = result.error_message.split('\n')[0]
+                    console.print(f"    {first_line}")
+                if result.suggestions:
+                    console.print(f"    [dim]Did you mean: {', '.join(result.suggestions[:3])}[/dim]")
+                console.print()
+            
+            raise ValueError(
+                f"Model validation failed: {len(failed)} invalid model(s). "
+                "Fix the model names in your config and try again."
+            )
+        
+        console.print(f"[green]✓ All {len(valid)} models validated successfully[/green]")
+    
     def _create_provider(self, config: RunConfig):
         """Create an LLM provider from config."""
         if config.provider == "anthropic":
@@ -426,7 +470,8 @@ class Runner:
             return OpenAIProvider(model=config.model)
         elif config.provider == "openrouter":
             from ..agents.providers.openrouter import OpenRouterProvider
-            return OpenRouterProvider(model=config.model)
+            # Skip validation here since we do it in preflight
+            return OpenRouterProvider(model=config.model, validate_model=False)
         else:
             raise ValueError(f"Unknown provider: {config.provider}. Supported: anthropic, openai, openrouter")
     
@@ -547,6 +592,15 @@ class Runner:
         console = Console()
         if duplicate_count > 0:
             console.print(f"[dim]Deduplicated {duplicate_count} overlapping configs from experimental matrix[/dim]")
+        
+        # Pre-flight model validation for OpenRouter
+        if self.validate_models:
+            openrouter_models = list(set(
+                rc.model for rc in deduplicated_configs 
+                if rc.provider == "openrouter"
+            ))
+            if openrouter_models:
+                self._validate_models_preflight(openrouter_models, console)
         
         # Filter out existing runs if skip_existing is enabled
         run_configs: list[RunConfig] = []

@@ -70,3 +70,56 @@ Figure~\ref{fig:model-radar} provides a multi-dimensional comparison of model ca
 \label{fig:model-radar}
 \end{figure}
 
+\subsection{Comparison with Reinforcement Learning Baseline}
+\label{sec:rl-baseline}
+
+To contextualize LLM agent performance, we trained a traditional reinforcement learning agent using Proximal Policy Optimization (PPO)~\citep{schulman2017proximal} via Stable Baselines3~\citep{stable-baselines3}. This provides a reference point for what a learning-based approach can achieve with full access to the environment dynamics.
+
+\paragraph{Architecture and Training.}
+The PPO agent uses a two-layer MLP policy with 64 hidden units per layer ($\sim$12K parameters), processing a 27-dimensional continuous observation encoding weather conditions, inventory levels, cash, reputation, and temporal features. Actions are decoded from an 8-dimensional continuous output space covering price setting and inventory purchases. The agent was trained for 4 million timesteps using:
+\begin{itemize}[noitemsep]
+    \item Generalized Advantage Estimation (GAE) with $\lambda = 0.95$
+    \item Rollout buffer of 4,096 steps across 8 parallel environments
+    \item Linearly decaying learning rate from $3 \times 10^{-4}$ to 0
+    \item Observation normalization via running statistics
+    \item \textbf{Randomized episode seeds} for generalization across weather patterns
+\end{itemize}
+
+Training completed in approximately 12 minutes on an AMD Ryzen 7 9800X3D CPU at $\sim$5,500 steps/second. Notably, the small MLP policy does not benefit from GPU acceleration---the environment simulation (running in Python) is the primary bottleneck.
+
+\paragraph{Results.}
+Table~\ref{tab:rl-baseline} compares the PPO agent against LLM agents on the same 10 evaluation seeds used throughout this paper.
+
+\begin{table}[h]
+\centering
+\caption{PPO Baseline vs.\ LLM Agents on Paper Methodology Seeds}
+\label{tab:rl-baseline}
+\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Agent} & \textbf{Mean Profit} & \textbf{Std Dev} & \textbf{Min} & \textbf{Max} & \textbf{Cups Sold} \\
+\midrule
+PPO Baseline (4M steps) & \$584.45 & \$98.31 & \$475.88 & \$778.87 & 573.6 \\
+\midrule
+\emph{[Best LLM Agent]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} \\
+\emph{[Median LLM Agent]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} \\
+Random Baseline & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} & \emph{[TBD]} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Interpretation.}
+The PPO agent achieves strong performance (\$584 mean profit) through millions of trial-and-error interactions with the environment, learning implicit patterns about weather-dependent pricing and inventory management. However, this comes with important caveats:
+
+\begin{enumerate}[noitemsep]
+    \item \textbf{No interpretability}: Unlike LLM agents that produce natural language reasoning, PPO's policy is a black-box neural network with no explanatory capacity.
+    
+    \item \textbf{No transfer}: The PPO agent is trained specifically on this environment; LLM agents apply general reasoning that could transfer to similar domains.
+    
+    \item \textbf{Sample efficiency}: PPO required 4M environment interactions ($\sim$285K episodes). LLM agents operate zero-shot or with minimal in-context examples.
+    
+    \item \textbf{High variance}: The PPO agent shows $\pm$\$98 standard deviation across seeds, reflecting genuine difficulty variance in the environment rather than reasoning inconsistency.
+\end{enumerate}
+
+The PPO baseline establishes that LemonadeBench is learnable through gradient-based optimization, while highlighting the distinct value proposition of LLM agents: interpretable reasoning, transfer potential, and sample efficiency---at the cost of [higher/lower/comparable] absolute performance.
+

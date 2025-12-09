@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   ComposedChart,
   Bar,
@@ -113,35 +114,6 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
   );
 }
 
-// Custom shape for box plot box (IQR box)
-function BoxShape(props: { x?: number; y?: number; width?: number; height?: number; payload?: BoxPlotData }) {
-  const { x, y, width, payload } = props;
-  if (!payload || x === undefined || y === undefined || width === undefined) return null;
-  
-  const color = CONDITION_COLORS[payload.condition] || '#8B4513';
-  
-  // Calculate positions (values are already in display units - dollars)
-  // The bar is positioned from boxBottom with boxHeight
-  // We need to draw whiskers and median line
-  
-  return (
-    <g>
-      {/* IQR Box */}
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={Math.abs(props.height || 0)}
-        fill={color}
-        fillOpacity={0.6}
-        stroke="#5D4037"
-        strokeWidth={2}
-        rx={4}
-      />
-    </g>
-  );
-}
-
 export function DistributionBoxPlot({ 
   runs, 
   title, 
@@ -242,8 +214,7 @@ export function DistributionBoxPlot({
             <Tooltip content={<CustomTooltip />} />
             
             {/* Whisker lines - draw as reference lines per category */}
-            {displayData.map((entry, index) => {
-              const yPosition = index;
+            {displayData.map((entry) => {
               const color = CONDITION_COLORS[entry.condition] || '#8B4513';
               return (
                 <ReferenceLine
@@ -290,8 +261,8 @@ export function DistributionBoxPlot({
               fill="#FFD700"
               stroke="#5D4037"
               strokeWidth={2}
-              shape={(props: { cx?: number; cy?: number; payload?: typeof displayData[0] }) => {
-                const { cx, cy } = props;
+              shape={((props: unknown) => {
+                const { cx, cy } = props as { cx?: number; cy?: number };
                 if (cx === undefined || cy === undefined) return null;
                 return (
                   <g>
@@ -313,7 +284,7 @@ export function DistributionBoxPlot({
                     />
                   </g>
                 );
-              }}
+              }) as (props: unknown) => React.ReactElement}
             />
           </ComposedChart>
         </ResponsiveContainer>

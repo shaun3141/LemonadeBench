@@ -488,6 +488,80 @@ def leaderboard(
 
 
 @app.command()
+def validate(
+    config_file: Path = typer.Argument(
+        ...,
+        help="YAML configuration file to validate"
+    ),
+):
+    """
+    Validate a batch configuration file.
+    
+    Checks that all model names are valid on OpenRouter and support
+    function calling. Use this before running batch experiments.
+    
+    Example:
+        lemonade validate examples/configs/paper_methodology.yaml
+    """
+    from .config import load_config
+    from ..agents.providers.model_registry import ModelRegistry
+    
+    if not config_file.exists():
+        console.print(f"[red]Config file not found: {config_file}[/red]")
+        raise typer.Exit(1)
+    
+    console.print(f"\n[bold blue]🍋 LemonadeBench Config Validation[/bold blue]")
+    console.print(f"[dim]Config: {config_file}[/dim]\n")
+    
+    # Load config
+    config = load_config(config_file)
+    
+    # Get unique OpenRouter models
+    openrouter_models = list(set(
+        model.name for model in config.models 
+        if model.provider == "openrouter"
+    ))
+    
+    if not openrouter_models:
+        console.print("[yellow]No OpenRouter models found in config[/yellow]")
+        console.print("[dim]Validation skipped (only OpenRouter models are validated via API)[/dim]")
+        return
+    
+    console.print(f"[dim]Found {len(openrouter_models)} unique OpenRouter models to validate...[/dim]\n")
+    
+    # Validate models
+    registry = ModelRegistry()
+    valid, failed = registry.validate_batch(openrouter_models, require_tools=True)
+    
+    # Show results
+    if valid:
+        console.print(f"[green]✓ Valid models ({len(valid)}):[/green]")
+        for model_id in sorted(valid):
+            info = registry.get_model(model_id)
+            tools_status = "✓ tools" if info and info.supports_tools else "✗ no tools"
+            ctx = f"{info.context_length:,}" if info else "?"
+            console.print(f"  [green]✓[/green] {model_id} ({ctx} ctx, {tools_status})")
+    
+    if failed:
+        console.print(f"\n[red]✗ Invalid models ({len(failed)}):[/red]")
+        for result in failed:
+            console.print(f"  [red]✗[/red] [bold]{result.model_id}[/bold]")
+            if result.error_message:
+                first_line = result.error_message.split('\n')[0]
+                console.print(f"    {first_line}")
+            if result.suggestions:
+                console.print(f"    [dim]Did you mean: {', '.join(result.suggestions[:3])}[/dim]")
+        
+        console.print()
+        console.print(f"[red bold]Validation FAILED[/red bold]")
+        console.print("[dim]Fix the invalid model names and re-run validation.[/dim]")
+        raise typer.Exit(1)
+    
+    console.print()
+    console.print(f"[green bold]✓ All {len(valid)} models validated successfully![/green bold]")
+
+
+@app.command()
 def models():
     """
     List available models, providers, and configuration options.

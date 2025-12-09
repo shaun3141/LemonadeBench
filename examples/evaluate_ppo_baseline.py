@@ -256,6 +256,74 @@ def save_baseline(result: PPOBaselineResult, output_path: str):
     print(f"\nBaseline saved to: {output_path}")
 
 
+def register_to_supabase(result: PPOBaselineResult, verbose: bool = True):
+    """
+    Register PPO baseline results to Supabase database.
+    
+    Requires SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables.
+    """
+    try:
+        from lemonade_bench.db import SupabaseLogger
+    except ImportError:
+        print("Warning: Could not import SupabaseLogger")
+        return False
+    
+    try:
+        logger = SupabaseLogger()
+    except ValueError as e:
+        if verbose:
+            print(f"Supabase credentials not configured: {e}")
+            print("Set SUPABASE_URL and SUPABASE_SERVICE_KEY to register to database.")
+        return False
+    
+    if verbose:
+        print("\nRegistering PPO baseline to Supabase...")
+    
+    # Register each seed as a separate run
+    for seed_result in result.seed_results:
+        # Check if this run already exists
+        if logger.run_exists(
+            model_name="PPO-Baseline-4M",
+            provider="stable-baselines3",
+            seed=seed_result.seed,
+            goal_framing="baseline",
+            architecture="rl",  # Special architecture for RL
+            scaffolding="none",
+        ):
+            if verbose:
+                print(f"  Seed {seed_result.seed}: Already exists, skipping")
+            continue
+        
+        # Create the run
+        run_id = logger.create_run(
+            model_name="PPO-Baseline-4M",
+            provider="stable-baselines3",
+            seed=seed_result.seed,
+            goal_framing="baseline",
+            architecture="rl",
+            scaffolding="none",
+        )
+        
+        # Complete the run with final stats
+        logger.complete_run(
+            run_id=run_id,
+            total_profit=int(seed_result.profit),
+            total_cups_sold=seed_result.cups_sold,
+            final_cash=int(seed_result.profit + 2000),  # Starting cash + profit
+            final_reputation=seed_result.reputation,
+            turn_count=len(seed_result.daily_profits),
+            error_count=0,
+        )
+        
+        if verbose:
+            print(f"  Seed {seed_result.seed}: Registered (profit=${seed_result.profit/100:.2f})")
+    
+    if verbose:
+        print("PPO baseline registration complete!")
+    
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Evaluate PPO model on paper methodology seeds"
@@ -279,6 +347,11 @@ def main():
         choices=["all", "goal_framing", "ablation"],
         help="Which seed set to evaluate on (default: all)",
     )
+    parser.add_argument(
+        "--register",
+        action="store_true",
+        help="Register results to Supabase database (requires credentials)",
+    )
     
     args = parser.parse_args()
     
@@ -299,6 +372,10 @@ def main():
     
     # Save results
     save_baseline(result, args.output)
+    
+    # Register to database if requested
+    if args.register:
+        register_to_supabase(result, verbose=True)
     
     # Print comparison format for paper
     print()

@@ -64,9 +64,11 @@ OPENROUTER_PRICING = {
     # Google Gemini models - Strong multimodal & reasoning
     # ==========================================================================
     "google/gemini-2.5-pro-preview": {"input": 1.25, "output": 10.00},
+    "google/gemini-2.5-pro": {"input": 1.25, "output": 10.00},
     "google/gemini-2.5-flash": {"input": 0.30, "output": 2.50},
     "google/gemini-2.5-flash-preview": {"input": 0.30, "output": 2.50},
-    "google/gemini-3-pro": {"input": 1.50, "output": 12.00},  # Dec 2025 flagship
+    "google/gemini-3-pro-preview": {"input": 1.50, "output": 12.00},  # Corrected name
+    "google/gemini-2.0-flash-001": {"input": 0.10, "output": 0.40},
     "google/gemini-2.0-flash-exp:free": {"input": 0.0, "output": 0.0},
     "google/gemini-pro-1.5": {"input": 1.25, "output": 5.00},
     "google/gemini-flash-1.5": {"input": 0.075, "output": 0.30},
@@ -106,7 +108,8 @@ OPENROUTER_PRICING = {
     "mistralai/mistral-large": {"input": 2.00, "output": 6.00},
     "mistralai/mistral-medium": {"input": 2.70, "output": 8.10},
     "mistralai/mistral-small": {"input": 0.20, "output": 0.60},
-    "mistralai/mistral-small-3": {"input": 0.10, "output": 0.30},  # Jan 2025
+    "mistralai/mistral-small-3.1-24b-instruct": {"input": 0.10, "output": 0.30},  # Corrected name
+    "mistralai/mistral-small-24b-instruct-2501": {"input": 0.10, "output": 0.30},
     "mistralai/mixtral-8x7b-instruct": {"input": 0.24, "output": 0.24},
     "mistralai/codestral-latest": {"input": 0.30, "output": 0.90},
     
@@ -121,8 +124,10 @@ OPENROUTER_PRICING = {
     # Other notable models
     # ==========================================================================
     "nvidia/llama-3.1-nemotron-70b-instruct": {"input": 0.40, "output": 0.40},
-    "x-ai/grok-2": {"input": 5.00, "output": 10.00},
-    "x-ai/grok-3": {"input": 3.00, "output": 15.00},  # Dec 2025
+    "x-ai/grok-3": {"input": 3.00, "output": 15.00},  # Corrected (grok-2 doesn't exist)
+    "x-ai/grok-3-beta": {"input": 3.00, "output": 15.00},
+    "x-ai/grok-3-mini": {"input": 0.30, "output": 0.50},
+    "x-ai/grok-4": {"input": 5.00, "output": 15.00},
     
     # Default fallback (conservative estimate)
     "default": {"input": 1.00, "output": 3.00},
@@ -152,10 +157,10 @@ MODEL_ALIASES = {
     # Google Gemini
     "gemini-pro": "google/gemini-pro-1.5",
     "gemini-flash": "google/gemini-flash-1.5",
-    "gemini-2.5-pro": "google/gemini-2.5-pro-preview",
+    "gemini-2.5-pro": "google/gemini-2.5-pro",
     "gemini-2.5-flash": "google/gemini-2.5-flash",
-    "gemini-2.0-flash": "google/gemini-2.0-flash-exp:free",
-    "gemini-3-pro": "google/gemini-3-pro",
+    "gemini-2.0-flash": "google/gemini-2.0-flash-001",
+    "gemini-3-pro": "google/gemini-3-pro-preview",  # Corrected
     
     # DeepSeek - Best value reasoning models
     "deepseek-chat": "deepseek/deepseek-chat",
@@ -179,12 +184,13 @@ MODEL_ALIASES = {
     
     # Mistral
     "mistral-large": "mistralai/mistral-large",
-    "mistral-small": "mistralai/mistral-small-3",
+    "mistral-small": "mistralai/mistral-small-3.1-24b-instruct",  # Corrected
     "codestral": "mistralai/codestral-latest",
     
     # X.AI
-    "grok-2": "x-ai/grok-2",
     "grok-3": "x-ai/grok-3",
+    "grok-3-mini": "x-ai/grok-3-mini",
+    "grok-4": "x-ai/grok-4",
 }
 
 
@@ -239,6 +245,8 @@ class OpenRouterProvider(LLMProvider):
         max_tokens: int = 1024,
         site_url: str | None = None,
         site_name: str | None = None,
+        validate_model: bool = True,
+        require_tools: bool = True,
     ):
         """
         Initialize the OpenRouter provider.
@@ -250,12 +258,15 @@ class OpenRouterProvider(LLMProvider):
             max_tokens: Maximum tokens in response
             site_url: Optional URL for your site (helps OpenRouter track usage)
             site_name: Optional name for your site/app
+            validate_model: If True, validate model exists on OpenRouter at init
+            require_tools: If True (and validate_model=True), ensure model supports function calling
         """
         # Resolve model aliases
         self._model = MODEL_ALIASES.get(model, model)
         self._max_tokens = max_tokens
         self._site_url = site_url
         self._site_name = site_name or "LemonadeBench"
+        self._model_info = None
         
         api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         if not api_key:
@@ -263,6 +274,14 @@ class OpenRouterProvider(LLMProvider):
                 "OpenRouter API key not found. Set OPENROUTER_API_KEY environment "
                 "variable or pass api_key parameter. Get a key at https://openrouter.ai/keys"
             )
+        
+        # Validate model exists and supports required features
+        if validate_model:
+            from .model_registry import ModelRegistry
+            registry = ModelRegistry()
+            result = registry.validate(self._model, require_tools=require_tools)
+            result.raise_if_invalid()
+            self._model_info = result.model_info
         
         # Use OpenAI SDK with OpenRouter base URL
         self._client = OpenAI(
@@ -625,10 +644,10 @@ class OpenRouterProvider(LLMProvider):
         For the full list, visit https://openrouter.ai/models
         """
         return [
-            # === Top Tier for Agentic Reasoning (Dec 2025) ===
+            # === Top Tier for Agentic Reasoning ===
             "anthropic/claude-opus-4.5",      # Best for long autonomous tasks
             "anthropic/claude-sonnet-4",       # Best all-around balance
-            "google/gemini-3-pro",             # Top multimodal reasoning
+            "google/gemini-3-pro-preview",     # Top multimodal reasoning (corrected)
             "deepseek/deepseek-r1",            # Best value reasoning
             "openai/o3-mini",                  # Strong reasoning, cost-effective
             
@@ -636,8 +655,8 @@ class OpenRouterProvider(LLMProvider):
             "anthropic/claude-opus-4",
             "openai/o1",
             "openai/gpt-4o",
-            "google/gemini-2.5-pro-preview",
-            "x-ai/grok-3",
+            "google/gemini-2.5-pro",
+            "x-ai/grok-3",                     # Corrected
             
             # === Cost-Effective Reasoning ===
             "deepseek/deepseek-chat",          # Very cheap, solid
@@ -655,7 +674,7 @@ class OpenRouterProvider(LLMProvider):
             "anthropic/claude-3.5-haiku",
             "openai/gpt-4o-mini",
             "google/gemini-2.5-flash",
-            "mistralai/mistral-small-3",
+            "mistralai/mistral-small-3.1-24b-instruct",  # Corrected
             
             # === Free Tier ===
             "google/gemini-2.0-flash-exp:free",
@@ -664,7 +683,7 @@ class OpenRouterProvider(LLMProvider):
     @staticmethod
     def list_best_for_agentic() -> list[str]:
         """
-        Return the best models for agentic reasoning tasks (Dec 2025).
+        Return the best models for agentic reasoning tasks.
         
         These models excel at:
         - Tool/function calling
@@ -674,17 +693,17 @@ class OpenRouterProvider(LLMProvider):
         """
         return [
             # Tier 1: Best overall agentic performance
-            "anthropic/claude-opus-4.5",       # 80.9% SWE-Bench, long autonomy
+            "anthropic/claude-opus-4.5",       # Best for long autonomous tasks
             "anthropic/claude-sonnet-4",       # Best balance of quality/cost
-            "google/gemini-3-pro",             # Top multimodal, MathArena leader
+            "google/gemini-3-pro-preview",     # Top multimodal (corrected)
             
             # Tier 2: Excellent reasoning
-            "deepseek/deepseek-r1",            # 97.3% MATH-500, MIT licensed
-            "openai/o3-mini",                  # 87.5% ARC-AGI
+            "deepseek/deepseek-r1",            # Strong reasoning, MIT licensed
+            "openai/o3-mini",                  # Efficient reasoning
             "openai/o1",                       # Strong reasoning
             
             # Tier 3: Cost-effective options
-            "deepseek/deepseek-chat",          # $0.14/M input, very capable
+            "deepseek/deepseek-chat",          # Very cheap, capable
             "qwen/qwq-32b",                    # Reasoning specialist
             "meta-llama/llama-3.3-70b-instruct",  # Open source leader
         ]

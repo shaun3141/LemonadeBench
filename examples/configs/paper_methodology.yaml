@@ -9,12 +9,10 @@
 # Total: 1000 episodes
 # Estimated cost: ~$50-80 (varies by model pricing)
 #
-# Run with: lemonade batch examples/paper_methodology.yaml --parallel 4
+# Run with: lemonade batch examples/configs/paper_methodology.yaml --parallel 4
 #
-# For individual studies, use the dedicated config files:
-#   - goal_framing_experiment.yaml (600 episodes)
-#   - architecture_ablation.yaml (160 episodes)
-#   - scaffolding_ablation.yaml (160 episodes)
+# For a quick test of the experimental setup, use:
+#   - paper_methodology_single_model.yaml (~70 episodes, ~$1)
 
 name: "LemonadeBench Paper Methodology - Full Experimental Matrix"
 
@@ -47,7 +45,7 @@ experiment:
     - anthropic/claude-3.5-haiku
     
     # Tier 3: Cost-Effective ($0.14-2.19/M tokens) - 4 models
-    - mistralai/mistral-small-3
+    - mistralai/mistral-small-3.1-24b-instruct  # Corrected from mistral-small-3
     - qwen/qwq-32b
     - deepseek/deepseek-chat
     - deepseek/deepseek-r1
@@ -61,11 +59,11 @@ experiment:
     # Tier 2: Balanced Performance ($1-6/M tokens) - 4 models
     - google/gemini-2.5-flash
     - openai/o3-mini
-    - x-ai/grok-2
+    - x-ai/grok-3  # Corrected from grok-2
     - anthropic/claude-3.5-sonnet
     
     # Tier 1: Premium Reasoning ($1-15/M tokens) - 5 models
-    - google/gemini-3-pro
+    - google/gemini-3-pro-preview  # Corrected from gemini-3-pro
     - anthropic/claude-sonnet-4
     - openai/o1
     - openai/gpt-5.1-chat
@@ -104,10 +102,10 @@ experiment:
 architecture_ablation:
   # 5 representative models (one from each major tier, using latest flagships)
   models:
-    - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship (Nov 2025)
-    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship (Dec 2025)
-    - google/gemini-3-pro            # Tier 1: Google flagship (Dec 2025)
-    - deepseek/deepseek-chat           # Tier 3: DeepSeek flagship (Dec 2025)
+    - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship
+    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship
+    - google/gemini-3-pro-preview    # Tier 1: Google flagship (corrected)
+    - deepseek/deepseek-chat         # Tier 3: DeepSeek flagship
     - meta-llama/llama-3.3-70b-instruct  # Tier 4: Open source leader
   
   # 10 seeds for statistical power on ablation comparisons
@@ -141,10 +139,10 @@ architecture_ablation:
 scaffolding_ablation:
   # Same 5 representative models as architecture ablation (latest flagships)
   models:
-    - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship (Nov 2025)
-    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship (Dec 2025)
-    - google/gemini-3-pro            # Tier 1: Google flagship (Dec 2025)
-    - deepseek/deepseek-chat           # Tier 3: DeepSeek flagship (Dec 2025)
+    - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship
+    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship
+    - google/gemini-3-pro-preview    # Tier 1: Google flagship (corrected)
+    - deepseek/deepseek-chat         # Tier 3: DeepSeek flagship
     - meta-llama/llama-3.3-70b-instruct  # Tier 4: Open source leader
   
   # 10 seeds for statistical power
@@ -202,26 +200,26 @@ logging:
 #
 # Tier 1 - Premium ($1-15/M tokens):
 #   1. anthropic/claude-sonnet-4        - Best all-around agentic
-#   2. anthropic/claude-opus-4.5        - Best long autonomous tasks (Nov 2025)
+#   2. anthropic/claude-opus-4.5        - Best long autonomous tasks
 #   3. openai/o1                        - Strong reasoning
-#   4. openai/gpt-5.1-chat              - OpenAI flagship (Dec 2025)
-#   5. google/gemini-3-pro              - Top multimodal (Dec 2025)
+#   4. openai/gpt-5.1-chat              - OpenAI flagship
+#   5. google/gemini-3-pro-preview      - Top multimodal (corrected)
 #
 # Tier 2 - Balanced ($1-6/M tokens):
 #   6. anthropic/claude-3.5-sonnet      - Great value
 #   7. openai/o3-mini                   - Efficient reasoning
 #   8. google/gemini-2.5-flash          - Fast + capable
-#   9. x-ai/grok-2                      - Alternative frontier
+#   9. x-ai/grok-3                      - Alternative frontier (corrected)
 #
 # Tier 3 - Value ($0.14-2.19/M tokens):
 #   10. deepseek/deepseek-r1            - Best value reasoning
-#   11. deepseek/deepseek-chat            - Latest flagship, rivals GPT-5 (Dec 2025)
+#   11. deepseek/deepseek-chat          - Latest flagship
 #   12. qwen/qwq-32b                    - Reasoning specialist
-#   13. mistralai/mistral-small-3       - Fast & cheap
+#   13. mistralai/mistral-small-3.1-24b-instruct - Fast & cheap (corrected)
 #
 # Tier 4 - Open Source ($0.20-2/M tokens):
-#   14. meta-llama/llama-3.3-70b        - Open source leader
-#   15. meta-llama/llama-3.1-405b       - Largest open model
+#   14. meta-llama/llama-3.3-70b-instruct - Open source leader
+#   15. meta-llama/llama-3.1-405b-instruct - Largest open model
 #   16. qwen/qwen-2.5-72b-instruct      - Strong multilingual
 #   17. mistralai/mistral-large         - European alternative
 #
