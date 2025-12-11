@@ -75,10 +75,14 @@ def action_to_dict(action) -> dict:
     """Convert action to a JSON-serializable dict."""
     return {
         "price_per_cup": action.price_per_cup,
-        "buy_lemons": action.buy_lemons,
-        "buy_sugar": action.buy_sugar,
-        "buy_cups": action.buy_cups,
-        "buy_ice": action.buy_ice,
+        "lemons_tier": action.lemons_tier,
+        "lemons_count": action.lemons_count,
+        "sugar_tier": action.sugar_tier,
+        "sugar_count": action.sugar_count,
+        "cups_tier": action.cups_tier,
+        "cups_count": action.cups_count,
+        "ice_tier": action.ice_tier,
+        "ice_count": action.ice_count,
         "advertising_spend": action.advertising_spend,
         "buy_upgrade": action.buy_upgrade,
         "location": action.location,
@@ -123,14 +127,14 @@ class VerboseCallback:
         
         # Build action string
         action_parts = [f"${turn.action.price_per_cup/100:.2f}/cup"]
-        if turn.action.buy_lemons > 0:
-            action_parts.append(f"buy {turn.action.buy_lemons} lemons")
-        if turn.action.buy_sugar > 0:
-            action_parts.append(f"buy {turn.action.buy_sugar} sugar")
-        if turn.action.buy_cups > 0:
-            action_parts.append(f"buy {turn.action.buy_cups} cups")
-        if turn.action.buy_ice > 0:
-            action_parts.append(f"buy {turn.action.buy_ice} ice")
+        if turn.action.lemons_count > 0:
+            action_parts.append(f"buy T{turn.action.lemons_tier}x{turn.action.lemons_count} lemons")
+        if turn.action.sugar_count > 0:
+            action_parts.append(f"buy T{turn.action.sugar_tier}x{turn.action.sugar_count} sugar")
+        if turn.action.cups_count > 0:
+            action_parts.append(f"buy T{turn.action.cups_tier}x{turn.action.cups_count} cups")
+        if turn.action.ice_count > 0:
+            action_parts.append(f"buy T{turn.action.ice_tier}x{turn.action.ice_count} ice")
         self.console.print(f"   [dim]Action: {', '.join(action_parts)}[/dim]")
         
         self.console.print(f"   {emoji} Sold {turn.cups_sold} cups, profit: ${turn.daily_profit/100:.2f}")
@@ -472,8 +476,13 @@ class Runner:
             from ..agents.providers.openrouter import OpenRouterProvider
             # Skip validation here since we do it in preflight
             return OpenRouterProvider(model=config.model, validate_model=False)
+        elif config.provider == "litellm":
+            from ..agents.providers.litellm_provider import LiteLLMProvider
+            # For Gemini 3 models, enable reasoning_effort for thought signatures
+            reasoning_effort = "low" if "gemini-3" in config.model else None
+            return LiteLLMProvider(model=config.model, reasoning_effort=reasoning_effort)
         else:
-            raise ValueError(f"Unknown provider: {config.provider}. Supported: anthropic, openai, openrouter")
+            raise ValueError(f"Unknown provider: {config.provider}. Supported: anthropic, openai, openrouter, litellm")
     
     def _create_agent(self, config: RunConfig) -> LemonadeAgent:
         """
@@ -608,9 +617,17 @@ class Runner:
         
         if self.skip_existing and self._supabase_logger:
             console.print("[dim]Checking for existing runs...[/dim]")
+            
+            # Batch fetch all existing runs in one query (much faster than individual checks)
+            existing_runs = self._supabase_logger.get_all_existing_runs(completed_only=False)
+            existing_set = {
+                (r["model_name"], r["seed"], r["goal_framing"], r["architecture"], r["scaffolding"])
+                for r in existing_runs
+            }
+            
             for rc in deduplicated_configs:
-                # Check for ANY run (including in-progress) to avoid duplicates with parallel execution
-                if self._run_exists(rc, completed_only=False):
+                key = (rc.model, rc.seed, rc.goal_framing, rc.architecture, self._get_scaffolding(rc))
+                if key in existing_set:
                     skipped_count += 1
                 else:
                     run_configs.append(rc)

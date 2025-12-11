@@ -1,28 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Citrus, Monitor, User, WifiOff, History, BarChart3, Dices, Eye } from 'lucide-react';
+import { Citrus, WifiOff, Dices } from 'lucide-react';
 
-import { ModelObservation } from '@/components/ModelObservation';
 import { HumanObservation } from '@/components/HumanObservation';
 import { ActionControls } from '@/components/ActionControls';
-import { MarketInsights } from '@/components/MarketInsights';
 import { DayEndStatsModal } from '@/components/game';
 import { useGame, useSeed, useServerConnection } from '@/hooks';
 import type { GameHistory } from '@/types';
-import { formatCents } from '@/lib/format';
 
 export function GamePage() {
   const { seed, initializeSeed, getInitialSeed } = useSeed();
@@ -38,8 +24,6 @@ export function GamePage() {
     onSeedReady: initializeSeed,
   });
 
-  const [isModelView, setIsModelView] = useState(false);
-  const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [dayEndStats, setDayEndStats] = useState<GameHistory | null>(null);
 
   // Action form state (lifted up for MarketInsights)
@@ -106,16 +90,6 @@ export function GamePage() {
                   Offline
                 </Badge>
               )}
-
-              {/* View Toggle */}
-              <div className="flex items-center gap-2 bg-white/80 rounded-xl px-3 py-1.5 border-2 border-[#8B4513]">
-                <User className="h-4 w-4 text-[#5D4037]" />
-                <Switch checked={isModelView} onCheckedChange={setIsModelView} id="view-mode" />
-                <Monitor className="h-4 w-4 text-[#5D4037]" />
-                <Label htmlFor="view-mode" className="text-sm cursor-pointer font-semibold text-[#5D4037]">
-                  {isModelView ? 'Model' : 'Human'}
-                </Label>
-              </div>
             </div>
           </div>
         </div>
@@ -149,85 +123,14 @@ export function GamePage() {
           <div className="grid lg:grid-cols-[1fr,420px] gap-6">
             {/* Observation Panel */}
             <div>
-              <Tabs defaultValue="observation" className="w-full">
-                <TabsList className="mb-4 bg-gradient-to-r from-[#FFFDE7] to-[#FFF9C4] border-2 border-[#8B4513] rounded-xl p-1">
-                  <TabsTrigger value="observation" className="gap-1.5 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg">
-                    <Eye className="h-4 w-4" />
-                    {isModelView ? 'Model View' : 'Game State'}
-                  </TabsTrigger>
-                  <TabsTrigger value="history" className="gap-1.5 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg">
-                    <History className="h-4 w-4" />
-                    History ({history.length})
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="observation">
-                  {isModelView ? (
-                    <ModelObservation observation={observation} />
-                  ) : (
-                    <HumanObservation observation={observation} />
-                  )}
-                </TabsContent>
-
-                <TabsContent value="history">
-                  <Card variant="retro">
-                    <CardContent className="p-4">
-                      {history.length === 0 ? (
-                        <p className="text-center text-[#5D4037]/70 py-8 font-display">
-                          No history yet. Start playing to see your decisions!
-                        </p>
-                      ) : (
-                        <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                          {[...history].reverse().map((entry, idx) => (
-                            <div
-                              key={history.length - idx - 1}
-                              className="p-3 bg-gradient-to-r from-[#FFF9C4] to-[#FFECB3] rounded-xl text-sm border-2 border-[#FFA000]"
-                            >
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="font-display text-[#5D4037]">Day {entry.day}</span>
-                                <Badge
-                                  variant={
-                                    entry.result.observation.daily_profit >= 0
-                                      ? 'retro-green'
-                                      : 'retro-pink'
-                                  }
-                                >
-                                  {entry.result.observation.daily_profit >= 0 ? '+' : ''}
-                                  {formatCents(entry.result.observation.daily_profit)}
-                                </Badge>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2 text-xs text-[#5D4037]/80">
-                                <span>💰 {formatCents(entry.action.price_per_cup)}</span>
-                                <span>🥤 {entry.result.observation.cups_sold} sold</span>
-                                <span>😊 {entry.result.observation.customers_served} served</span>
-                                <span>😢 {entry.result.observation.customers_turned_away} left</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+              <HumanObservation observation={observation} />
             </div>
 
             {/* Action Panel */}
             <div className="lg:sticky lg:top-20 lg:self-start">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl text-[#5D4037] flex items-center gap-2">🍋 Your Turn!</h2>
-                <Button
-                  variant="retro-blue"
-                  size="retro-sm"
-                  onClick={() => setShowMarketIntel(true)}
-                  className="gap-2"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Intel
-                </Button>
-              </div>
               <ActionControls
                 observation={observation}
+                history={history}
                 onSubmit={onAction}
                 onReset={handleReset}
                 disabled={isLoading}
@@ -243,26 +146,6 @@ export function GamePage() {
           </div>
         )}
       </main>
-
-      {/* Market Intelligence Modal */}
-      <Dialog open={showMarketIntel} onOpenChange={setShowMarketIntel}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto bg-gradient-to-b from-[#FFFDE7] to-[#FFF9C4] border-4 border-[#5D4037] rounded-2xl shadow-[6px_6px_0_#3E2723]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-display text-xl text-[#5D4037]">
-              <BarChart3 className="h-5 w-5 text-[#1976D2]" />
-              Market Intel
-            </DialogTitle>
-          </DialogHeader>
-          {observation && (
-            <MarketInsights observation={observation} selectedPrice={selectedPrice} />
-          )}
-          <DialogFooter>
-            <Button variant="retro" onClick={() => setShowMarketIntel(false)} className="w-full">
-              Got It!
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Day End Stats Modal */}
       <DayEndStatsModal dayEndStats={dayEndStats} onClose={() => setDayEndStats(null)} />

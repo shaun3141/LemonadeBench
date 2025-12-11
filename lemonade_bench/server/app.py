@@ -186,6 +186,7 @@ async def step_action(request: Dict[str, Any]) -> Dict[str, Any]:
     Step endpoint - executes action and returns observation.
     
     Uses the global environment instance (which has the seed from reset).
+    Supports both tier-based (internal) and quantity-based (frontend) APIs.
     """
     global env
     
@@ -194,6 +195,19 @@ async def step_action(request: Dict[str, Any]) -> Dict[str, Any]:
     
     # Remove metadata if present
     metadata = action_data.pop("metadata", {})
+    
+    # Convert quantity-based fields (buy_X) to tier-based if present
+    # This allows the frontend to use simpler quantity fields
+    from ..models import quantity_to_tier_count
+    for supply in ["lemons", "sugar", "cups", "ice"]:
+        buy_key = f"buy_{supply}"
+        if buy_key in action_data:
+            qty = action_data.pop(buy_key)
+            if qty and qty > 0:
+                tier, count = quantity_to_tier_count(supply, qty)
+                action_data[f"{supply}_tier"] = tier
+                action_data[f"{supply}_count"] = count
+    
     action = LemonadeAction(**action_data)
     action.metadata = metadata
     

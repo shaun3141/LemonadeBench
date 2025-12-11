@@ -33,7 +33,7 @@ class LemonadeEnv(HTTPEnvClient[LemonadeAction, LemonadeObservation]):
         >>> # Make decisions for the day (cups made on-demand based on customer demand)
         >>> action = LemonadeAction(
         ...     price_per_cup=75,  # $0.75
-        ...     buy_lemons=10,
+        ...     lemons_tier=2, lemons_count=1,  # Buy 1 dozen lemons
         ... )
         >>> result = client.step(action)
         >>> print(f"Sold {result.observation.cups_sold} cups!")
@@ -59,10 +59,14 @@ class LemonadeEnv(HTTPEnvClient[LemonadeAction, LemonadeObservation]):
         """
         return {
             "price_per_cup": action.price_per_cup,
-            "buy_lemons": action.buy_lemons,
-            "buy_sugar": action.buy_sugar,
-            "buy_cups": action.buy_cups,
-            "buy_ice": action.buy_ice,
+            "lemons_tier": action.lemons_tier,
+            "lemons_count": action.lemons_count,
+            "sugar_tier": action.sugar_tier,
+            "sugar_count": action.sugar_count,
+            "cups_tier": action.cups_tier,
+            "cups_count": action.cups_count,
+            "ice_tier": action.ice_tier,
+            "ice_count": action.ice_count,
             "advertising_spend": action.advertising_spend,
             "buy_upgrade": action.buy_upgrade,
             "location": action.location,

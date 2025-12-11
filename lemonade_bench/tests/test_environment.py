@@ -288,8 +288,9 @@ class TestPurchasing:
         initial_lemons = obs0.lemons
 
         # High price = low demand = fewer supplies consumed
+        # Buy 1 dozen = 12 lemons
         action = LemonadeAction(
-            price_per_cup=500, buy_lemons=10
+            price_per_cup=500, lemons_tier=2, lemons_count=1
         )
         obs = env.step(action)
 
@@ -303,8 +304,9 @@ class TestPurchasing:
         initial_sugar = obs0.sugar_bags
 
         # High price = low demand
+        # Buy 1 case = 5 bags
         action = LemonadeAction(
-            price_per_cup=500, buy_sugar=5
+            price_per_cup=500, sugar_tier=2, sugar_count=1
         )
         obs = env.step(action)
 
@@ -317,8 +319,9 @@ class TestPurchasing:
         initial_cups = obs0.cups_available
 
         # High price = low demand
+        # Buy 2 packs = 20 cups
         action = LemonadeAction(
-            price_per_cup=500, buy_cups=20
+            price_per_cup=500, cups_tier=1, cups_count=2
         )
         obs = env.step(action)
 
@@ -329,8 +332,9 @@ class TestPurchasing:
         """Test buying ice increases inventory."""
         env.reset()
 
+        # Buy 2 cooler packs = 10 bags
         action = LemonadeAction(
-            price_per_cup=500, buy_ice=10
+            price_per_cup=500, ice_tier=2, ice_count=2
         )
         obs = env.step(action)
 
@@ -345,8 +349,8 @@ class TestPurchasing:
 
         action = LemonadeAction(
             price_per_cup=500,  # High price = low demand
-            buy_lemons=10,
-            buy_sugar=2,
+            lemons_tier=1, lemons_count=10,  # 10 single lemons
+            sugar_tier=1, sugar_count=2,     # 2 single bags
         )
         obs = env.step(action)
 
@@ -359,7 +363,7 @@ class TestPurchasing:
         # Try to buy way more than we can afford
         action = LemonadeAction(
             price_per_cup=500,
-            buy_lemons=10000,  # Would cost way more than starting cash
+            lemons_tier=3, lemons_count=100,  # 100 crates = 14400 lemons - way too expensive
         )
         obs = env.step(action)
 
@@ -372,8 +376,8 @@ class TestPurchasing:
 
         env1.reset()
 
-        # Buy 12 lemons (should get dozen discount), high price = no sales
-        action1 = LemonadeAction(price_per_cup=500, buy_lemons=12)
+        # Buy 1 dozen lemons (tier 2, 10% discount), high price = no sales
+        action1 = LemonadeAction(price_per_cup=500, lemons_tier=2, lemons_count=1)
         obs1 = env1.step(action1)
 
         # Full price: 12 * 25 = 300, with 10% off = 270
@@ -406,8 +410,9 @@ class TestPerishableItems:
         env.reset()
 
         # Buy ice, high price = no sales (ice won't be used)
+        # Buy 2 cooler packs = 10 bags
         action = LemonadeAction(
-            price_per_cup=500, buy_ice=10
+            price_per_cup=500, ice_tier=2, ice_count=2
         )
         obs1 = env.step(action)
 
@@ -454,9 +459,9 @@ class TestPerishableItems:
         """Test older lemons are used first (FIFO)."""
         env.reset()
 
-        # Buy more lemons, high price = no sales
+        # Buy more lemons (2 dozen = 24), high price = no sales
         action = LemonadeAction(
-            price_per_cup=500, buy_lemons=20
+            price_per_cup=500, lemons_tier=2, lemons_count=2
         )
         env.step(action)
 
@@ -503,11 +508,11 @@ class TestCoolerUpgrade:
         """Test cooler preserves 50% of ice."""
         env.reset()
 
-        # Buy cooler and ice, high price = no sales
+        # Buy cooler and ice (2 cooler packs = 10 bags), high price = no sales
         action = LemonadeAction(
             price_per_cup=500,
             buy_upgrade="cooler",
-            buy_ice=10,
+            ice_tier=2, ice_count=2,
         )
         env.step(action)
 
@@ -664,7 +669,7 @@ class TestReputation:
         env.reset()
 
         # Good service at good price (with enough supplies)
-        action = LemonadeAction(price_per_cup=50, buy_lemons=20, buy_cups=50)
+        action = LemonadeAction(price_per_cup=50, lemons_tier=2, lemons_count=2, cups_tier=2, cups_count=1)
 
         # Take several steps to see reputation change
         for _ in range(5):
@@ -677,7 +682,7 @@ class TestReputation:
         """Test reputation stays between 0 and 1."""
         env.reset()
 
-        action = LemonadeAction(price_per_cup=25, buy_lemons=10)
+        action = LemonadeAction(price_per_cup=25, lemons_tier=1, lemons_count=10)
 
         for _ in range(10):
             obs = env.step(action)

@@ -139,11 +139,17 @@ print(f"Starting cash: ${obs.cash / 100:.2f}")
 
 # Make daily decisions
 while not obs.done:
+    # Use quantity_to_tier_count to auto-apply bulk discounts
+    from lemonade_bench.models import quantity_to_tier_count
+    lt, lc = quantity_to_tier_count("lemons", 10)
+    st, sc = quantity_to_tier_count("sugar", 3)
+    ct, cc = quantity_to_tier_count("cups", 30)
+    
     action = LemonadeAction(
-        price_per_cup=100,      # $1.00 per cup
-        buy_lemons=10,          # Restock lemons
-        buy_sugar=3,            # Restock sugar
-        buy_cups=30,            # Restock cups
+        price_per_cup=100,                  # $1.00 per cup
+        lemons_tier=lt, lemons_count=lc,    # Restock lemons
+        sugar_tier=st, sugar_count=sc,      # Restock sugar
+        cups_tier=ct, cups_count=cc,        # Restock cups
         advertising_spend=50,   # $0.50 on ads
     )
     obs = env.step(action)
@@ -178,9 +184,20 @@ print(f"Final profit: ${obs.total_profit / 100:.2f}")
 | Item | Cost | Yield | Expiration |
 |------|------|-------|------------|
 | 🍋 Lemon | $0.25 | 4 cups | 3 days (FIFO) |
-| 🍚 Sugar Bag | $1.00 | 10 cups | Never |
+| 🍚 Sugar Bag | $0.50 | 10 cups | Never |
 | 🥤 Cup | $0.05 | 1 serving | Never |
-| 🧊 Ice Bag | $0.50 | 5 cups | Overnight |
+| 🧊 Ice Bag | $0.25 | 5 cups | Overnight |
+
+### Bulk Discounts (Auto-Applied)
+
+Specify the quantity you want - the system automatically applies the best bulk discount:
+
+| Supply | 10% off threshold | 20% off threshold |
+|--------|-------------------|-------------------|
+| Lemons | 12+ (Dozen) | 144+ (Crate) |
+| Sugar | 5+ (Case) | 20+ (Pallet) |
+| Cups | 50+ (Sleeve) | 250+ (Case) |
+| Ice | 5+ (Cooler Pack) | 20+ (Delivery) |
 
 **Note:** Lemonade is made **on-demand** as customers arrive—no need to pre-commit to production quantities.
 

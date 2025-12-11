@@ -5,12 +5,12 @@ export const CUPS_PER_LEMON = 4;
 export const CUPS_PER_SUGAR_BAG = 10;
 export const CUPS_PER_ICE_BAG = 5;
 
-// Base prices in cents
+// Base prices in cents (matching backend BULK_PRICING)
 export const BASE_PRICES = {
-  lemon: 25,
-  sugar_bag: 100,
-  cup: 5,
-  ice_bag: 50,
+  lemon: 25,      // $0.25 per lemon
+  sugar_bag: 50,  // $0.50 per bag
+  cup: 5,         // $0.05 per cup
+  ice_bag: 25,    // $0.25 per bag
 } as const;
 
 // Game configuration

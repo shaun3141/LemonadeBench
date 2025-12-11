@@ -96,8 +96,13 @@ def get_provider(provider_name: str, model_name: str):
     elif provider_name == "openrouter":
         from ..agents.providers.openrouter import OpenRouterProvider
         return OpenRouterProvider(model=model_name)
+    elif provider_name == "litellm":
+        from ..agents.providers.litellm_provider import LiteLLMProvider
+        # For Gemini 3 models, enable reasoning_effort for thought signatures
+        reasoning_effort = "low" if "gemini-3" in model_name else None
+        return LiteLLMProvider(model=model_name, reasoning_effort=reasoning_effort)
     else:
-        raise ValueError(f"Unknown provider: {provider_name}. Supported: anthropic, openai, openrouter")
+        raise ValueError(f"Unknown provider: {provider_name}. Supported: anthropic, openai, openrouter, litellm")
 
 
 @app.command()

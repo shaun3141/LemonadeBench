@@ -27,8 +27,36 @@ from models import (
     Weather,
     StandUpgrade,
     calculate_bulk_cost,
+    quantity_to_tier_count,
 )
 from server.lemonade_environment import LemonadeEnvironment
+
+
+def make_action(
+    price_per_cup: int,
+    lemons: int = 0,
+    sugar: int = 0,
+    cups: int = 0,
+    ice: int = 0,
+    advertising_spend: int = 0,
+    buy_upgrade: str = None,
+    location: str = None,
+) -> LemonadeAction:
+    """Helper to create action with quantity -> tier+count conversion."""
+    lt, lc = quantity_to_tier_count("lemons", lemons)
+    st, sc = quantity_to_tier_count("sugar", sugar)
+    ct, cc = quantity_to_tier_count("cups", cups)
+    it, ic = quantity_to_tier_count("ice", ice)
+    return LemonadeAction(
+        price_per_cup=price_per_cup,
+        lemons_tier=lt, lemons_count=lc,
+        sugar_tier=st, sugar_count=sc,
+        cups_tier=ct, cups_count=cc,
+        ice_tier=it, ice_count=ic,
+        advertising_spend=advertising_spend,
+        buy_upgrade=buy_upgrade,
+        location=location,
+    )
 
 
 class TestFullGameSimulation:
@@ -60,11 +88,11 @@ class TestFullGameSimulation:
 
         # Conservative strategy: moderate price, keep supplies stocked
         for _ in range(14):
-            action = LemonadeAction(
+            action = make_action(
                 price_per_cup=75,
-                buy_lemons=10 if obs.lemons < 20 else 0,
-                buy_sugar=2 if obs.sugar_bags < 3 else 0,
-                buy_cups=30 if obs.cups_available < 30 else 0,
+                lemons=10 if obs.lemons < 20 else 0,
+                sugar=2 if obs.sugar_bags < 3 else 0,
+                cups=30 if obs.cups_available < 30 else 0,
             )
             obs = env.step(action)
             if obs.done:
@@ -139,9 +167,9 @@ class TestBankruptcyScenarios:
         obs0 = env.reset()
         initial_lemons = obs0.lemons
 
-        action = LemonadeAction(
+        action = make_action(
             price_per_cup=500,  # High price = low demand
-            buy_lemons=100,
+            lemons=100,
         )
         obs = env.step(action)
 
@@ -290,12 +318,12 @@ class TestBulkPurchasingStrategy:
         )
         env.reset()
 
-        action = LemonadeAction(
+        action = make_action(
             price_per_cup=500,  # High price = low demand
-            buy_lemons=144,  # Crate
-            buy_sugar=20,  # Pallet
-            buy_cups=250,  # Case
-            buy_ice=20,  # Delivery
+            lemons=144,  # Crate
+            sugar=20,  # Pallet
+            cups=250,  # Case
+            ice=20,  # Delivery
         )
         obs = env.step(action)
 
@@ -332,23 +360,23 @@ class TestUpgradeStrategy:
         env_cooler.reset()
 
         # Buy cooler immediately
-        action_buy_cooler = LemonadeAction(
+        action_buy_cooler = make_action(
             price_per_cup=75,
             buy_upgrade="cooler",
-            buy_ice=10,
+            ice=10,
         )
         env_cooler.step(action_buy_cooler)
 
-        action_no_cooler = LemonadeAction(
+        action_no_cooler = make_action(
             price_per_cup=75,
-            buy_ice=10,
+            ice=10,
         )
         env_no_cooler.step(action_no_cooler)
 
         # Continue playing both
-        action = LemonadeAction(
+        action = make_action(
             price_per_cup=75,
-            buy_ice=5,
+            ice=5,
         )
 
         for _ in range(13):
@@ -383,9 +411,9 @@ class TestPerishableManagement:
         env.reset()
 
         # Buy ice, high price = low demand = ice not used much
-        action = LemonadeAction(
+        action = make_action(
             price_per_cup=500,
-            buy_ice=10,
+            ice=10,
         )
         obs1 = env.step(action)
 
@@ -400,10 +428,10 @@ class TestPerishableManagement:
         env.reset()
 
         # Buy cooler and ice, high price = low demand
-        action = LemonadeAction(
+        action = make_action(
             price_per_cup=500,
             buy_upgrade="cooler",
-            buy_ice=10,
+            ice=10,
         )
         env.step(action)
 
@@ -480,10 +508,10 @@ class TestWeatherStrategies:
         # Make decisions based on forecast
         if forecast in ["hot", "sunny"]:
             # Buy supplies for tomorrow
-            action = LemonadeAction(
+            action = make_action(
                 price_per_cup=75,
-                buy_lemons=15,
-                buy_ice=10,
+                lemons=15,
+                ice=10,
             )
         else:
             # Conservative approach
@@ -620,11 +648,11 @@ class TestExtremeScenarios:
         env.reset()
 
         # Buy massive amounts, high price = low demand
-        action = LemonadeAction(
+        action = make_action(
             price_per_cup=500,
-            buy_lemons=10000,
-            buy_sugar=1000,
-            buy_cups=10000,
+            lemons=10000,
+            sugar=1000,
+            cups=10000,
         )
         obs = env.step(action)
 
@@ -637,11 +665,11 @@ class TestExtremeScenarios:
         env = LemonadeEnvironment(config=config, seed=42)
         env.reset()
 
-        action = LemonadeAction(
+        action = make_action(
             price_per_cup=75,
-            buy_lemons=10,
-            buy_sugar=2,
-            buy_cups=30,
+            lemons=10,
+            sugar=2,
+            cups=30,
         )
 
         for i in range(100):

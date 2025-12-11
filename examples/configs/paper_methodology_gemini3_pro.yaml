@@ -1,0 +1,89 @@
+# LemonadeBench Paper Methodology - Gemini 3 Pro Only
+#
+# Full paper methodology using Google Gemini 3 Pro as the single model.
+# Uses LiteLLM provider with OpenRouter routing for thought signature handling.
+#
+# This configuration runs:
+#   1. Goal-Framing: 1 model × 6 conditions × 5 seeds = 30 episodes
+#   2. Architecture: 1 model × 4 architectures × 5 seeds = 20 episodes
+#   3. Scaffolding: 1 model × 4 scaffolds × 5 seeds = 20 episodes
+#
+# Total: 70 episodes
+#
+# Run with: lemonade batch examples/configs/paper_methodology_gemini3_pro.yaml --parallel 4
+
+name: "Paper Methodology - Gemini 3 Pro"
+
+# =============================================================================
+# STUDY 1: GOAL-FRAMING EXPERIMENT
+# =============================================================================
+experiment:
+  # Use LiteLLM for Gemini 3 Pro (handles thought signatures automatically)
+  # OpenRouter routing: openrouter/provider/model uses OPENROUTER_API_KEY
+  provider: litellm
+  
+  models:
+    # LiteLLM + OpenRouter format: openrouter/google/model-name
+    - openrouter/google/gemini-3-pro-preview
+  
+  seeds: [1, 42, 100, 7, 2025]
+  
+  goal_framings:
+    - baseline
+    - aggressive
+    - conservative
+    - competitive
+    - survival
+    - growth
+  
+  architectures: [react]
+  scaffoldings: [none]
+
+# =============================================================================
+# STUDY 2: ARCHITECTURE ABLATION
+# =============================================================================
+architecture_ablation:
+  provider: litellm
+  
+  models:
+    - openrouter/google/gemini-3-pro-preview
+  
+  seeds: [1, 42, 100, 7, 2025]
+  
+  architectures:
+    - react
+    - plan_act
+    - act_reflect
+    - full
+  
+  goal_framings: [baseline]
+  scaffoldings: [none]
+
+# =============================================================================
+# STUDY 3: SCAFFOLDING ABLATION
+# =============================================================================
+scaffolding_ablation:
+  provider: litellm
+  
+  models:
+    - openrouter/google/gemini-3-pro-preview
+  
+  seeds: [1, 42, 100, 7, 2025]
+  
+  scaffoldings:
+    - none
+    - calculator
+    - math_prompt
+    - code_interpreter
+  
+  architectures: [react]
+  goal_framings: [baseline]
+
+# =============================================================================
+# LOGGING
+# =============================================================================
+logging:
+  local: true
+  supabase: true
+  dir: ./runs/paper_methodology_gemini3_pro
+

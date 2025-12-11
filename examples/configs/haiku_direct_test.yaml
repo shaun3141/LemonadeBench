@@ -1,0 +1,16 @@
+# Claude Haiku direct API test
+name: "Context Optimization Test - Claude Haiku Direct"
+
+models:
+  - provider: anthropic
+    name: claude-3-5-haiku-latest
+    seeds: [42]
+    tags: [haiku, context-test, direct]
+    architecture: react
+    goal_framing: baseline
+    tools: []
+
+logging:
+  local: true
+  supabase: false
+  dir: ./runs/context_test

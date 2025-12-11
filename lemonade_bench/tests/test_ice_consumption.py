@@ -33,10 +33,6 @@ class TestIceConsumption:
         # Take action - set reasonable price to ensure sales
         action = LemonadeAction(
             price_per_cup=75,
-            buy_lemons=0,
-            buy_sugar=0,
-            buy_cups=0,
-            buy_ice=0,
             advertising_spend=0,
         )
         
@@ -146,10 +142,6 @@ class TestAPISerializaton:
         # Take an action
         action = LemonadeAction(
             price_per_cup=75,
-            buy_lemons=0,
-            buy_sugar=0,
-            buy_cups=0,
-            buy_ice=0,
             advertising_spend=0,
         )
         

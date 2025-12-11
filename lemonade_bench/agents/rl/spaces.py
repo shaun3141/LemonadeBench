@@ -18,6 +18,7 @@ from ...models import (
     StandUpgrade,
     LOCATION_CATALOG,
     UPGRADE_CATALOG,
+    BULK_PRICING,
 )
 
 
@@ -173,28 +174,30 @@ def get_observation_labels() -> list[str]:
 
 # Flat Action Space (default, compatible with all algorithms):
 # - price: 1 (continuous [0, 1] -> [25, 200] cents)
-# - buy_lemons: 1 (continuous [0, 1] -> [0, 50])
-# - buy_sugar: 1 (continuous [0, 1] -> [0, 20])
-# - buy_cups: 1 (continuous [0, 1] -> [0, 100])
-# - buy_ice: 1 (continuous [0, 1] -> [0, 30])
+# - lemons_qty: 1 (continuous [0, 1] -> [0, 50] units, converted to tier+count)
+# - sugar_qty: 1 (continuous [0, 1] -> [0, 20] bags, converted to tier+count)
+# - cups_qty: 1 (continuous [0, 1] -> [0, 100] cups, converted to tier+count)
+# - ice_qty: 1 (continuous [0, 1] -> [0, 30] bags, converted to tier+count)
 # - advertising: 1 (continuous [0, 1] -> [0, 500] cents)
 # - location: 1 (continuous [0, 1] -> discrete location choice)
 # - buy_upgrade: 1 (continuous [0, 1] -> threshold for buying upgrade)
 # Total: 8
+# Note: Supply quantities are auto-converted to optimal tier+count via quantity_to_tier_count()
 
 ACTION_DIM = 8
 
 # Mixed Action Space (more natural representation):
 # Continuous actions:
 #   - price: 1 (continuous [0, 1] -> [25, 200] cents)
-#   - buy_lemons: 1 (continuous [0, 1] -> [0, 50])
-#   - buy_sugar: 1 (continuous [0, 1] -> [0, 20])
-#   - buy_cups: 1 (continuous [0, 1] -> [0, 100])
-#   - buy_ice: 1 (continuous [0, 1] -> [0, 30])
+#   - lemons_qty: 1 (continuous [0, 1] -> [0, 50] units)
+#   - sugar_qty: 1 (continuous [0, 1] -> [0, 20] bags)
+#   - cups_qty: 1 (continuous [0, 1] -> [0, 100] cups)
+#   - ice_qty: 1 (continuous [0, 1] -> [0, 30] bags)
 #   - advertising: 1 (continuous [0, 1] -> [0, 500] cents)
 # Discrete actions:
 #   - location: 4 options (park, downtown, mall, pool)
 #   - buy_upgrade: 2 options (no, yes)
+# Note: Quantities auto-converted to optimal tier+count
 
 MIXED_ACTION_CONTINUOUS_DIM = 6
 MIXED_ACTION_LOCATION_DIM = 4
@@ -210,6 +213,57 @@ ACTION_BOUNDS = {
     "ice_max": 30,
     "advertising_max": 500,
 }
+
+
+def quantity_to_tier_count(supply_type: str, target_qty: int) -> tuple[int, int]:
+    """
+    Convert a target quantity to the best tier+count combination.
+    
+    Uses the smallest tier that achieves at least the target quantity.
+    
+    Args:
+        supply_type: One of "lemons", "sugar", "cups", "ice"
+        target_qty: Target quantity to purchase
+        
+    Returns:
+        Tuple of (tier, count) where tier is 1-3
+    """
+    if target_qty <= 0:
+        return (1, 0)
+    
+    pricing = BULK_PRICING.get(supply_type)
+    if not pricing:
+        return (1, 0)
+    
+    # Find the tier that best matches the target quantity
+    # Prefer tier 1 for small quantities, higher tiers for larger
+    for tier_idx, tier in enumerate(pricing.tiers):
+        tier_num = tier_idx + 1
+        tier_qty = tier.quantity
+        
+        # If this tier's quantity is larger than or equal to target, use it
+        if tier_qty >= target_qty:
+            count = 1  # Buy one of this tier
+            return (tier_num, count)
+        
+        # Calculate how many of this tier we need
+        count_needed = (target_qty + tier_qty - 1) // tier_qty  # Ceiling division
+        
+        # If this tier with count would overshoot by less than next tier, use it
+        if tier_idx == len(pricing.tiers) - 1:
+            # Last tier, use it
+            return (tier_num, count_needed)
+    
+    return (1, target_qty)  # Fallback
+
+
+def tier_count_to_quantity(supply_type: str, tier: int, count: int) -> int:
+    """Convert tier+count to actual quantity."""
+    pricing = BULK_PRICING.get(supply_type)
+    if not pricing or count <= 0:
+        return 0
+    tier_idx = min(tier - 1, len(pricing.tiers) - 1)
+    return pricing.tiers[tier_idx].quantity * count
 
 
 def decode_action(action: np.ndarray, current_upgrades: list[str] = None) -> LemonadeAction:
@@ -232,11 +286,16 @@ def decode_action(action: np.ndarray, current_upgrades: list[str] = None) -> Lem
     price = int(action[0] * (ACTION_BOUNDS["price_max"] - ACTION_BOUNDS["price_min"]) 
                 + ACTION_BOUNDS["price_min"])
     
-    # Purchases: map [0, 1] to integer quantities
-    buy_lemons = int(action[1] * ACTION_BOUNDS["lemons_max"])
-    buy_sugar = int(action[2] * ACTION_BOUNDS["sugar_max"])
-    buy_cups = int(action[3] * ACTION_BOUNDS["cups_max"])
-    buy_ice = int(action[4] * ACTION_BOUNDS["ice_max"])
+    # Purchases: map [0, 1] to target quantities, then convert to tier+count
+    target_lemons = int(action[1] * ACTION_BOUNDS["lemons_max"])
+    target_sugar = int(action[2] * ACTION_BOUNDS["sugar_max"])
+    target_cups = int(action[3] * ACTION_BOUNDS["cups_max"])
+    target_ice = int(action[4] * ACTION_BOUNDS["ice_max"])
+    
+    lemons_tier, lemons_count = quantity_to_tier_count("lemons", target_lemons)
+    sugar_tier, sugar_count = quantity_to_tier_count("sugar", target_sugar)
+    cups_tier, cups_count = quantity_to_tier_count("cups", target_cups)
+    ice_tier, ice_count = quantity_to_tier_count("ice", target_ice)
     
     # Advertising: map [0, 1] to [0, 500] cents
     advertising = int(action[5] * ACTION_BOUNDS["advertising_max"])
@@ -256,10 +315,14 @@ def decode_action(action: np.ndarray, current_upgrades: list[str] = None) -> Lem
     
     return LemonadeAction(
         price_per_cup=price,
-        buy_lemons=buy_lemons,
-        buy_sugar=buy_sugar,
-        buy_cups=buy_cups,
-        buy_ice=buy_ice,
+        lemons_tier=lemons_tier,
+        lemons_count=lemons_count,
+        sugar_tier=sugar_tier,
+        sugar_count=sugar_count,
+        cups_tier=cups_tier,
+        cups_count=cups_count,
+        ice_tier=ice_tier,
+        ice_count=ice_count,
         advertising_spend=advertising,
         location=location,
         buy_upgrade=buy_upgrade,
@@ -280,7 +343,7 @@ def decode_mixed_action(
     
     Args:
         continuous_action: Numpy array of shape (6,) with values in [0, 1]
-            [price, buy_lemons, buy_sugar, buy_cups, buy_ice, advertising]
+            [price, lemons_qty, sugar_qty, cups_qty, ice_qty, advertising]
         location_action: Integer index 0-3 for location choice
         upgrade_action: Integer 0 (no) or 1 (yes) for buying upgrade
         current_upgrades: List of currently owned upgrade IDs
@@ -297,11 +360,16 @@ def decode_mixed_action(
     price = int(continuous_action[0] * (ACTION_BOUNDS["price_max"] - ACTION_BOUNDS["price_min"]) 
                 + ACTION_BOUNDS["price_min"])
     
-    # Purchases: map [0, 1] to integer quantities
-    buy_lemons = int(continuous_action[1] * ACTION_BOUNDS["lemons_max"])
-    buy_sugar = int(continuous_action[2] * ACTION_BOUNDS["sugar_max"])
-    buy_cups = int(continuous_action[3] * ACTION_BOUNDS["cups_max"])
-    buy_ice = int(continuous_action[4] * ACTION_BOUNDS["ice_max"])
+    # Purchases: map [0, 1] to target quantities, then convert to tier+count
+    target_lemons = int(continuous_action[1] * ACTION_BOUNDS["lemons_max"])
+    target_sugar = int(continuous_action[2] * ACTION_BOUNDS["sugar_max"])
+    target_cups = int(continuous_action[3] * ACTION_BOUNDS["cups_max"])
+    target_ice = int(continuous_action[4] * ACTION_BOUNDS["ice_max"])
+    
+    lemons_tier, lemons_count = quantity_to_tier_count("lemons", target_lemons)
+    sugar_tier, sugar_count = quantity_to_tier_count("sugar", target_sugar)
+    cups_tier, cups_count = quantity_to_tier_count("cups", target_cups)
+    ice_tier, ice_count = quantity_to_tier_count("ice", target_ice)
     
     # Advertising: map [0, 1] to [0, 500] cents
     advertising = int(continuous_action[5] * ACTION_BOUNDS["advertising_max"])
@@ -319,10 +387,14 @@ def decode_mixed_action(
     
     return LemonadeAction(
         price_per_cup=price,
-        buy_lemons=buy_lemons,
-        buy_sugar=buy_sugar,
-        buy_cups=buy_cups,
-        buy_ice=buy_ice,
+        lemons_tier=lemons_tier,
+        lemons_count=lemons_count,
+        sugar_tier=sugar_tier,
+        sugar_count=sugar_count,
+        cups_tier=cups_tier,
+        cups_count=cups_count,
+        ice_tier=ice_tier,
+        ice_count=ice_count,
         advertising_spend=advertising,
         location=location,
         buy_upgrade=buy_upgrade,
@@ -347,11 +419,16 @@ def encode_action(action: LemonadeAction) -> np.ndarray:
     encoded[0] = (action.price_per_cup - ACTION_BOUNDS["price_min"]) / \
                  (ACTION_BOUNDS["price_max"] - ACTION_BOUNDS["price_min"])
     
-    # Purchases
-    encoded[1] = action.buy_lemons / ACTION_BOUNDS["lemons_max"]
-    encoded[2] = action.buy_sugar / ACTION_BOUNDS["sugar_max"]
-    encoded[3] = action.buy_cups / ACTION_BOUNDS["cups_max"]
-    encoded[4] = action.buy_ice / ACTION_BOUNDS["ice_max"]
+    # Purchases - convert tier+count back to effective quantity
+    qty_lemons = tier_count_to_quantity("lemons", action.lemons_tier, action.lemons_count)
+    qty_sugar = tier_count_to_quantity("sugar", action.sugar_tier, action.sugar_count)
+    qty_cups = tier_count_to_quantity("cups", action.cups_tier, action.cups_count)
+    qty_ice = tier_count_to_quantity("ice", action.ice_tier, action.ice_count)
+    
+    encoded[1] = qty_lemons / ACTION_BOUNDS["lemons_max"]
+    encoded[2] = qty_sugar / ACTION_BOUNDS["sugar_max"]
+    encoded[3] = qty_cups / ACTION_BOUNDS["cups_max"]
+    encoded[4] = qty_ice / ACTION_BOUNDS["ice_max"]
     
     # Advertising
     encoded[5] = action.advertising_spend / ACTION_BOUNDS["advertising_max"]
@@ -373,10 +450,10 @@ def get_action_labels() -> list[str]:
     """Get human-readable labels for each action dimension."""
     return [
         "price",
-        "buy_lemons",
-        "buy_sugar", 
-        "buy_cups",
-        "buy_ice",
+        "lemons_qty",
+        "sugar_qty", 
+        "cups_qty",
+        "ice_qty",
         "advertising",
         "location",
         "buy_upgrade",

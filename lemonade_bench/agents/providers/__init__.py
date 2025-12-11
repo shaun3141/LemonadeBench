@@ -5,7 +5,7 @@
 LLM Provider adapters for LemonadeBench.
 
 This module provides a unified interface for interacting with different LLM
-providers (Anthropic, OpenAI, OpenRouter, etc.) for the LLM-powered agent.
+providers (Anthropic, OpenAI, OpenRouter, LiteLLM, etc.) for the LLM-powered agent.
 """
 
 from .base import LLMProvider, ToolResponse, TokenUsage
@@ -28,6 +28,22 @@ except ImportError:
     _OPENROUTER_AVAILABLE = False
     OpenRouterProvider = None  # type: ignore
 
+# LiteLLM is optional - provides unified interface with thought signature support
+try:
+    from .litellm_provider import LiteLLMProvider
+    _LITELLM_AVAILABLE = True
+except ImportError:
+    _LITELLM_AVAILABLE = False
+    LiteLLMProvider = None  # type: ignore
+
+# vLLM provider for local inference with fine-tuned models
+try:
+    from .vllm_provider import VLLMProvider
+    _VLLM_AVAILABLE = True
+except ImportError:
+    _VLLM_AVAILABLE = False
+    VLLMProvider = None  # type: ignore
+
 __all__ = [
     "LLMProvider",
     "ToolResponse",
@@ -35,6 +51,8 @@ __all__ = [
     "AnthropicProvider",
     "OpenAIProvider",
     "OpenRouterProvider",
+    "LiteLLMProvider",
+    "VLLMProvider",
     "ModelRegistry",
     "ModelInfo",
     "ValidationResult",

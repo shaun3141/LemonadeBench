@@ -28,11 +28,35 @@ from ..models import (
     Weather,
     Location,
     LOCATION_CATALOG,
+    BULK_PRICING,
     StandUpgrade,
     UPGRADE_CATALOG,
     calculate_bulk_cost,
 )
 from ..server.lemonade_environment import LemonadeEnvironment
+
+
+def quantity_to_tier_count(supply_type: str, target_qty: int) -> tuple[int, int]:
+    """Convert a target quantity to the best tier+count combination."""
+    if target_qty <= 0:
+        return (1, 0)
+    
+    pricing = BULK_PRICING.get(supply_type)
+    if not pricing:
+        return (1, 0)
+    
+    for tier_idx, tier in enumerate(pricing.tiers):
+        tier_num = tier_idx + 1
+        tier_qty = tier.quantity
+        
+        if tier_qty >= target_qty:
+            return (tier_num, 1)
+        
+        count_needed = (target_qty + tier_qty - 1) // tier_qty
+        if tier_idx == len(pricing.tiers) - 1:
+            return (tier_num, count_needed)
+    
+    return (1, target_qty)
 
 
 @dataclass
@@ -193,13 +217,19 @@ class OptimalSolver:
                                     if total_cost > cash:
                                         continue
                                     
+                                    # Convert quantities to tier+count
+                                    lt, lc = quantity_to_tier_count("lemons", lemons)
+                                    st, sc = quantity_to_tier_count("sugar", sugar)
+                                    ct, cc = quantity_to_tier_count("cups", cups)
+                                    it, ic = quantity_to_tier_count("ice", ice)
+                                    
                                     # Create action
                                     action = LemonadeAction(
                                         price_per_cup=price,
-                                        buy_lemons=lemons,
-                                        buy_sugar=sugar,
-                                        buy_cups=cups,
-                                        buy_ice=ice,
+                                        lemons_tier=lt, lemons_count=lc,
+                                        sugar_tier=st, sugar_count=sc,
+                                        cups_tier=ct, cups_count=cc,
+                                        ice_tier=it, ice_count=ic,
                                         advertising_spend=0,
                                         buy_upgrade=upgrade,
                                         location=location,
@@ -269,10 +299,14 @@ class OptimalSolver:
                         temperature=temperature,
                         action={
                             "price_per_cup": action.price_per_cup,
-                            "buy_lemons": action.buy_lemons,
-                            "buy_sugar": action.buy_sugar,
-                            "buy_cups": action.buy_cups,
-                            "buy_ice": action.buy_ice,
+                            "lemons_tier": action.lemons_tier,
+                            "lemons_count": action.lemons_count,
+                            "sugar_tier": action.sugar_tier,
+                            "sugar_count": action.sugar_count,
+                            "cups_tier": action.cups_tier,
+                            "cups_count": action.cups_count,
+                            "ice_tier": action.ice_tier,
+                            "ice_count": action.ice_count,
                             "advertising_spend": action.advertising_spend,
                             "buy_upgrade": action.buy_upgrade,
                             "location": action.location,

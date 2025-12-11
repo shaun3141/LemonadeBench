@@ -3,12 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Package, MapPin, Store, DollarSign, Play, RotateCcw, AlertTriangle, Tag, Timer } from 'lucide-react';
-import type { LemonadeAction, LemonadeObservation, StandUpgradeId, SupplyType, LocationId } from '../types';
+import { Package, MapPin, Store, DollarSign, Play, RotateCcw, AlertTriangle, Tag, Timer, BarChart3, History } from 'lucide-react';
+import type { LemonadeAction, LemonadeObservation, StandUpgradeId, SupplyType, LocationId, GameHistory } from '../types';
 import { CUPS_PER_LEMON, CUPS_PER_SUGAR_BAG } from '@/lib/constants';
 import { formatCents } from '@/lib/format';
 import {
-  OrderSummary,
   RecipeDialog,
   SupplyColumn,
   LocationPicker,
@@ -16,9 +15,11 @@ import {
   PricingControls,
   type TierPurchases,
 } from './game';
+import { MarketInsights } from './MarketInsights';
 
 interface ActionControlsProps {
   observation: LemonadeObservation;
+  history: GameHistory[];
   onSubmit: (action: LemonadeAction) => void;
   onReset: () => void;
   disabled?: boolean;
@@ -35,6 +36,7 @@ interface SupplyPurchases {
 
 export function ActionControls({
   observation,
+  history,
   onSubmit,
   onReset,
   disabled,
@@ -121,10 +123,11 @@ export function ActionControls({
   const totalSugar = observation.sugar_bags + buySugar;
   const totalCups = observation.cups_available + buyCups;
 
-  const maxCupsFromLemons = Math.floor(totalLemons * CUPS_PER_LEMON);
-  const maxCupsFromSugar = Math.floor(totalSugar * CUPS_PER_SUGAR_BAG);
-  const maxCupsFromCups = totalCups;
-  const maxPossibleCups = Math.min(maxCupsFromLemons, maxCupsFromSugar, maxCupsFromCups);
+  // These are used for capacity calculations if needed
+  const _maxCupsFromLemons = Math.floor(totalLemons * CUPS_PER_LEMON);
+  const _maxCupsFromSugar = Math.floor(totalSugar * CUPS_PER_SUGAR_BAG);
+  const _maxCupsFromCups = totalCups;
+  void (_maxCupsFromLemons + _maxCupsFromSugar + _maxCupsFromCups); // Silence unused warnings
 
   // Calculate total costs
   const supplyCost =
@@ -186,34 +189,60 @@ export function ActionControls({
 
   return (
     <div className="space-y-4">
-      {/* Order Summary Bar */}
-      <OrderSummary
-        cash={observation.cash}
-        maxPossibleCups={maxPossibleCups}
-        hasPendingPurchases={buyLemons > 0 || buySugar > 0 || buyCups > 0}
-        totalCost={totalCost}
-        totalSavings={totalSavings}
-        canAfford={canAfford}
-      />
+      {/* Header with Title and Action Buttons */}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-xl text-[#5D4037] flex items-center gap-2">🍋 Your Turn!</h2>
+        <div className="flex gap-2">
+          {isGameOver ? (
+            <Button onClick={onReset} variant="retro-pink" size="retro-sm">
+              <RotateCcw className="h-4 w-4 mr-1.5" />
+              Play Again!
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleSubmit}
+                disabled={disabled || !canAfford}
+                variant="retro-green"
+                size="retro-sm"
+              >
+                <Play className="h-4 w-4 mr-1.5" />
+                Start Day {observation.day}!
+              </Button>
+              <Button onClick={onReset} variant="retro-outline" size="retro-sm">
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Tabbed Decisions - Retro Style */}
       <Tabs defaultValue="supplies" className="w-full">
-        <TabsList className="w-full grid grid-cols-4 bg-gradient-to-r from-[#FFFDE7] to-[#FFF9C4] border-2 border-[#8B4513] rounded-xl p-1">
-          <TabsTrigger value="supplies" className="gap-1.5 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513]">
-            <Package className="h-4 w-4" />
+        <TabsList className="w-full grid grid-cols-6 bg-gradient-to-r from-[#FFFDE7] to-[#FFF9C4] border-2 border-[#8B4513] rounded-xl p-1">
+          <TabsTrigger value="supplies" className="gap-1 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513] text-xs px-1">
+            <Package className="h-3.5 w-3.5" />
             Stock
           </TabsTrigger>
-          <TabsTrigger value="location" className="gap-1.5 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513]">
-            <MapPin className="h-4 w-4" />
+          <TabsTrigger value="location" className="gap-1 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513] text-xs px-1">
+            <MapPin className="h-3.5 w-3.5" />
             Area
           </TabsTrigger>
-          <TabsTrigger value="upgrades" className="gap-1.5 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513]">
-            <Store className="h-4 w-4" />
+          <TabsTrigger value="upgrades" className="gap-1 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513] text-xs px-1">
+            <Store className="h-3.5 w-3.5" />
             Shop
           </TabsTrigger>
-          <TabsTrigger value="pricing" className="gap-1.5 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513]">
-            <DollarSign className="h-4 w-4" />
+          <TabsTrigger value="pricing" className="gap-1 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513] text-xs px-1">
+            <DollarSign className="h-3.5 w-3.5" />
             Price
+          </TabsTrigger>
+          <TabsTrigger value="intel" className="gap-1 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513] text-xs px-1">
+            <BarChart3 className="h-3.5 w-3.5" />
+            Intel
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1 font-display data-[state=active]:bg-[#FFE135] data-[state=active]:text-[#5D4037] rounded-lg text-[#8B4513] text-xs px-1">
+            <History className="h-3.5 w-3.5" />
+            Log
           </TabsTrigger>
         </TabsList>
 
@@ -340,33 +369,76 @@ export function ActionControls({
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
-      {/* Action Buttons - Retro Style */}
-      <div className="flex gap-2">
-        {isGameOver ? (
-          <Button onClick={onReset} variant="retro-pink" size="retro-lg" className="flex-1">
-            <RotateCcw className="h-5 w-5 mr-2" />
-            Play Again!
-          </Button>
-        ) : (
-          <>
-            <Button
-              onClick={handleSubmit}
-              disabled={disabled || !canAfford}
-              variant="retro-green"
-              size="retro-lg"
-              className="flex-1"
-            >
-              <Play className="h-5 w-5 mr-2" />
-              Start Day {observation.day}!
-            </Button>
-            <Button onClick={onReset} variant="retro-outline" size="retro-default">
-              <RotateCcw className="h-5 w-5" />
-            </Button>
-          </>
-        )}
-      </div>
+        {/* Market Intel Tab */}
+        <TabsContent value="intel">
+          <Card variant="retro">
+            <CardHeader className="pb-2">
+              <CardTitle variant="retro" className="flex items-center gap-2 text-base">
+                <BarChart3 className="h-4 w-4 text-[#1976D2]" />
+                Market Intel
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MarketInsights observation={observation} selectedPrice={selectedPrice} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history">
+          <Card variant="retro">
+            <CardHeader className="pb-2">
+              <CardTitle variant="retro" className="flex items-center gap-2 text-base">
+                <History className="h-4 w-4 text-[#8B4513]" />
+                Game Log
+                {history.length > 0 && (
+                  <Badge variant="retro" className="text-xs">
+                    {history.length} days
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {history.length === 0 ? (
+                <p className="text-center text-[#5D4037]/70 py-6 font-display text-sm">
+                  No history yet. Start playing to see your decisions!
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {[...history].reverse().map((entry, idx) => (
+                    <div
+                      key={history.length - idx - 1}
+                      className="p-2.5 bg-gradient-to-r from-[#FFF9C4] to-[#FFECB3] rounded-xl text-sm border-2 border-[#FFA000]"
+                    >
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="font-display text-[#5D4037] text-sm">Day {entry.day}</span>
+                        <Badge
+                          variant={
+                            entry.result.observation.daily_profit >= 0
+                              ? 'retro-green'
+                              : 'retro-pink'
+                          }
+                          className="text-xs"
+                        >
+                          {entry.result.observation.daily_profit >= 0 ? '+' : ''}
+                          {formatCents(entry.result.observation.daily_profit)}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 text-xs text-[#5D4037]/80">
+                        <span>💰 {formatCents(entry.action.price_per_cup)}</span>
+                        <span>🥤 {entry.result.observation.cups_sold} sold</span>
+                        <span>😊 {entry.result.observation.customers_served} served</span>
+                        <span>😢 {entry.result.observation.customers_turned_away} left</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {!canAfford && !isGameOver && (
         <Card variant="retro-pink" className="py-2">

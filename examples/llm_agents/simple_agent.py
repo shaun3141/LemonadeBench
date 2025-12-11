@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from lemonade_bench import LemonadeAction, LemonadeObservation
+from lemonade_bench.models import quantity_to_tier_count
 from lemonade_bench.server.lemonade_environment import LemonadeEnvironment
 
 
@@ -47,26 +48,23 @@ def weather_based_strategy(obs: LemonadeObservation) -> LemonadeAction:
         price = 50
     
     # Inventory management - buy enough supplies to meet expected demand
-    buy_lemons = 0
-    buy_sugar = 0
-    buy_cups = 0
+    target_lemons = 15 if obs.lemons < 10 else 0
+    target_sugar = 5 if obs.sugar_bags < 5 else 0
+    target_cups = 50 if obs.cups_available < 30 else 0
     
-    # Restock if running low
-    if obs.lemons < 10:
-        buy_lemons = 15
-    if obs.sugar_bags < 5:
-        buy_sugar = 5
-    if obs.cups_available < 30:
-        buy_cups = 50
+    # Convert quantities to optimal tier+count (bulk discounts auto-applied)
+    lt, lc = quantity_to_tier_count("lemons", target_lemons)
+    st, sc = quantity_to_tier_count("sugar", target_sugar)
+    ct, cc = quantity_to_tier_count("cups", target_cups)
     
     # Advertising on good weather days
     advertising = 100 if weather in ["hot", "sunny"] else 0
     
     return LemonadeAction(
         price_per_cup=price,
-        buy_lemons=buy_lemons,
-        buy_sugar=buy_sugar,
-        buy_cups=buy_cups,
+        lemons_tier=lt, lemons_count=lc,
+        sugar_tier=st, sugar_count=sc,
+        cups_tier=ct, cups_count=cc,
         advertising_spend=advertising,
     )
 

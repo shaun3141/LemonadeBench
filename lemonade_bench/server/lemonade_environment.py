@@ -20,9 +20,33 @@ from openenv_core.env_server.types import State
 
 # Support both in-repo and standalone imports
 try:
-    from models import LemonadeAction, LemonadeObservation, GameConfig, Weather, MarketHints, StandUpgrade, UPGRADE_CATALOG, BULK_PRICING, calculate_bulk_cost, Location, LOCATION_CATALOG
+    from models import LemonadeAction, LemonadeObservation, GameConfig, Weather, MarketHints, StandUpgrade, UPGRADE_CATALOG, BULK_PRICING, calculate_tier_purchase, Location, LOCATION_CATALOG
 except ImportError:
-    from ..models import LemonadeAction, LemonadeObservation, GameConfig, Weather, MarketHints, StandUpgrade, UPGRADE_CATALOG, BULK_PRICING, calculate_bulk_cost, Location, LOCATION_CATALOG
+    from ..models import LemonadeAction, LemonadeObservation, GameConfig, Weather, MarketHints, StandUpgrade, UPGRADE_CATALOG, BULK_PRICING, calculate_tier_purchase, Location, LOCATION_CATALOG
+
+
+def resolve_supply_purchase(action: LemonadeAction, supply_type: str) -> tuple[int, int]:
+    """
+    Resolve purchase cost and quantity from tier-based fields.
+    
+    Args:
+        action: The action containing purchase info
+        supply_type: One of "lemons", "sugar", "cups", "ice"
+        
+    Returns:
+        Tuple of (cost_cents, quantity)
+    """
+    # Map supply type to field names
+    tier_field = f"{supply_type}_tier"
+    count_field = f"{supply_type}_count"
+    
+    tier = getattr(action, tier_field, 1)
+    count = getattr(action, count_field, 0)
+    
+    if count > 0:
+        return calculate_tier_purchase(supply_type, tier, count)
+    else:
+        return (0, 0)
 
 
 class LemonadeEnvironment(Environment):
@@ -45,7 +69,7 @@ class LemonadeEnvironment(Environment):
         >>> obs = env.reset()
         >>> print(f"Day {obs.day}: {obs.weather}, {obs.temperature}°F")
         >>>
-        >>> action = LemonadeAction(price_per_cup=75, buy_lemons=10)
+        >>> action = LemonadeAction(price_per_cup=75, lemons_tier=2, lemons_count=1)  # Buy 1 dozen
         >>> obs = env.step(action)
         >>> print(f"Sold {obs.cups_sold} cups, profit: ${obs.daily_profit/100:.2f}")
     """
@@ -267,7 +291,8 @@ class LemonadeEnvironment(Environment):
             # At exposure>1, multiplier is amplified (good weather is better, bad is worse)
             multiplier = 1.0 + (multiplier - 1.0) * weather_exposure
         
-        return multiplier
+        # Floor at 0 to prevent negative demand (e.g., stormy + pool's 1.8x exposure)
+        return max(0.0, multiplier)
     
     def _calculate_foot_traffic(
         self,
@@ -771,34 +796,14 @@ class LemonadeEnvironment(Environment):
             except ValueError:
                 errors.append(f"Invalid location: {action.location}")
         
-        # Check purchase costs
-        if action.buy_lemons > 0:
-            cost = calculate_bulk_cost("lemons", action.buy_lemons)
-            if cost > remaining_cash:
-                errors.append(f"Cannot afford {action.buy_lemons} lemons: ${cost/100:.2f} needed, ${remaining_cash/100:.2f} available")
-            else:
-                remaining_cash -= cost
-        
-        if action.buy_sugar > 0:
-            cost = calculate_bulk_cost("sugar", action.buy_sugar)
-            if cost > remaining_cash:
-                errors.append(f"Cannot afford {action.buy_sugar} sugar bags: ${cost/100:.2f} needed, ${remaining_cash/100:.2f} available")
-            else:
-                remaining_cash -= cost
-        
-        if action.buy_cups > 0:
-            cost = calculate_bulk_cost("cups", action.buy_cups)
-            if cost > remaining_cash:
-                errors.append(f"Cannot afford {action.buy_cups} cups: ${cost/100:.2f} needed, ${remaining_cash/100:.2f} available")
-            else:
-                remaining_cash -= cost
-        
-        if action.buy_ice > 0:
-            cost = calculate_bulk_cost("ice", action.buy_ice)
-            if cost > remaining_cash:
-                errors.append(f"Cannot afford {action.buy_ice} ice bags: ${cost/100:.2f} needed, ${remaining_cash/100:.2f} available")
-            else:
-                remaining_cash -= cost
+        # Check purchase costs (supports both tier-based and legacy quantity-based)
+        for supply_type, unit_name in [("lemons", "lemons"), ("sugar", "sugar bags"), ("cups", "cups"), ("ice", "ice bags")]:
+            cost, qty = resolve_supply_purchase(action, supply_type)
+            if qty > 0:
+                if cost > remaining_cash:
+                    errors.append(f"Cannot afford {qty} {unit_name}: ${cost/100:.2f} needed, ${remaining_cash/100:.2f} available")
+                else:
+                    remaining_cash -= cost
         
         # Check upgrade cost
         if action.buy_upgrade:
@@ -915,38 +920,36 @@ class LemonadeEnvironment(Environment):
             except ValueError:
                 pass  # Invalid location name, stay at current location
         
-        # 2. Process supply purchases (morning) - with bulk discounts!
+        # 2. Process supply purchases (morning) - supports tier-based and legacy
         purchase_cost = 0
         
-        if action.buy_lemons > 0:
-            cost = calculate_bulk_cost("lemons", action.buy_lemons)
-            if cost <= self.cash:
-                # Add new batch with full shelf life
-                self.lemon_batches.append((action.buy_lemons, self.config.lemon_shelf_life))
-                self.cash -= cost
-                purchase_cost += cost
+        # Lemons (perishable)
+        lemon_cost, lemon_qty = resolve_supply_purchase(action, "lemons")
+        if lemon_qty > 0 and lemon_cost <= self.cash:
+            self.lemon_batches.append((lemon_qty, self.config.lemon_shelf_life))
+            self.cash -= lemon_cost
+            purchase_cost += lemon_cost
         
-        if action.buy_sugar > 0:
-            cost = calculate_bulk_cost("sugar", action.buy_sugar)
-            if cost <= self.cash:
-                self.sugar_bags += action.buy_sugar
-                self.cash -= cost
-                purchase_cost += cost
+        # Sugar (non-perishable)
+        sugar_cost, sugar_qty = resolve_supply_purchase(action, "sugar")
+        if sugar_qty > 0 and sugar_cost <= self.cash:
+            self.sugar_bags += sugar_qty
+            self.cash -= sugar_cost
+            purchase_cost += sugar_cost
         
-        if action.buy_cups > 0:
-            cost = calculate_bulk_cost("cups", action.buy_cups)
-            if cost <= self.cash:
-                self.cups += action.buy_cups
-                self.cash -= cost
-                purchase_cost += cost
+        # Cups (non-perishable)
+        cups_cost, cups_qty = resolve_supply_purchase(action, "cups")
+        if cups_qty > 0 and cups_cost <= self.cash:
+            self.cups += cups_qty
+            self.cash -= cups_cost
+            purchase_cost += cups_cost
         
-        if action.buy_ice > 0:
-            cost = calculate_bulk_cost("ice", action.buy_ice)
-            if cost <= self.cash:
-                # Add new batch with full shelf life (1 day for ice)
-                self.ice_batches.append((action.buy_ice, self.config.ice_shelf_life))
-                self.cash -= cost
-                purchase_cost += cost
+        # Ice (perishable)
+        ice_cost, ice_qty = resolve_supply_purchase(action, "ice")
+        if ice_qty > 0 and ice_cost <= self.cash:
+            self.ice_batches.append((ice_qty, self.config.ice_shelf_life))
+            self.cash -= ice_cost
+            purchase_cost += ice_cost
         
         # Process upgrade purchase
         if action.buy_upgrade:

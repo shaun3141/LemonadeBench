@@ -45,10 +45,10 @@ class LemonadeGymEnv(gym.Env):
     Action Space (Box):
         8-dimensional continuous action in [0, 1]:
         - [0] price: maps to [25, 200] cents
-        - [1] buy_lemons: maps to [0, 50] units
-        - [2] buy_sugar: maps to [0, 20] bags
-        - [3] buy_cups: maps to [0, 100] cups
-        - [4] buy_ice: maps to [0, 30] bags
+        - [1] lemons_qty: maps to [0, 50] units (converted to tier+count)
+        - [2] sugar_qty: maps to [0, 20] bags (converted to tier+count)
+        - [3] cups_qty: maps to [0, 100] cups (converted to tier+count)
+        - [4] ice_qty: maps to [0, 30] bags (converted to tier+count)
         - [5] advertising: maps to [0, 500] cents
         - [6] location: selects from 4 locations
         - [7] buy_upgrade: threshold for buying upgrade
@@ -441,7 +441,8 @@ class LemonadeGymEnv(gym.Env):
             print(f"Day {obs.day}: {obs.weather.upper()} ({obs.temperature}F)")
             if action:
                 print(f"  Action: ${action.price_per_cup/100:.2f}/cup, "
-                      f"buy: {action.buy_lemons}L/{action.buy_sugar}S/{action.buy_cups}C/{action.buy_ice}I")
+                      f"buy: T{action.lemons_tier}x{action.lemons_count}L/T{action.sugar_tier}x{action.sugar_count}S/"
+                      f"T{action.cups_tier}x{action.cups_count}C/T{action.ice_tier}x{action.ice_count}I")
             print(f"  Sold: {obs.cups_sold} cups, Profit: ${obs.daily_profit/100:.2f}")
             print(f"  Cash: ${obs.cash/100:.2f}, Reputation: {obs.reputation:.2f}")
             

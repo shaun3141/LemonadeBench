@@ -75,10 +75,10 @@ def full_action() -> LemonadeAction:
     """Action with all fields populated."""
     return LemonadeAction(
         price_per_cup=100,
-        buy_lemons=20,
-        buy_sugar=5,
-        buy_cups=100,
-        buy_ice=10,
+        lemons_tier=2, lemons_count=2,   # 2 dozen = 24 lemons
+        sugar_tier=2, sugar_count=1,     # 1 case = 5 bags
+        cups_tier=3, cups_count=1,       # 1 case = 250 cups
+        ice_tier=2, ice_count=2,         # 2 cooler packs = 10 bags
         advertising_spend=200,
         buy_upgrade="cooler",
     )

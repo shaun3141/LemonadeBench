@@ -1,0 +1,66 @@
+# RFT Configuration for Qwen3-30B-A3B LoRA Fine-Tuning
+# This config is optimized for the Qwen3-30B-A3B-Instruct-2507 MoE model
+
+experiment_name: "lemonade_qwen3_30b_rft"
+
+model:
+  model_name: "Qwen/Qwen3-30B-A3B-Instruct-2507"
+  max_seq_length: 8192
+  load_in_4bit: true  # QLoRA for memory efficiency
+  dtype: "bfloat16"   # Requires Ampere+ GPU
+  trust_remote_code: true
+
+lora:
+  # LoRA rank: RL needs very low capacity (r=8-16 works as well as r=64)
+  # SL on larger datasets may need r=32-64
+  # See: https://tinker-docs.thinkingmachines.ai/lora-primer
+  r: 16                 # LoRA rank (lower for RL, higher for large SL datasets)
+  lora_alpha: 32        # Scaling factor (typically 2×r)
+  lora_dropout: 0.05
+  target_modules:
+    # Apply LoRA to ALL weight matrices - especially important for MoE models
+    # Attention-only LoRA underperforms even with matched parameter count
+    # Attention layers
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    # MLP/Expert layers (critical for MoE models!)
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  use_rslora: true      # Rank-Stabilized LoRA
+  use_gradient_checkpointing: true
+  gradient_checkpointing_method: "unsloth"
+
+training:
+  output_dir: "./rft_output/qwen3_30b"
+  num_train_epochs: 3
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8  # Effective batch = 8
+  # LoRA requires 20-100x higher LR than full fine-tuning
+  # For ~30B models, full FT LR ~1e-6, so LoRA LR ~2e-4 to 1e-3
+  learning_rate: 5.0e-4   # Higher LR for LoRA (was 2e-4, now 5e-4)
+  weight_decay: 0.01
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine"
+  max_grad_norm: 1.0
+  logging_steps: 10
+  save_steps: 100
+  save_total_limit: 3
+  optim: "adamw_8bit"
+  seed: 42
+  use_flash_attention: true
+
+data:
+  num_episodes: 500
+  trajectories_dir: "./rft_trajectories"
+  successful_only: false
+  min_profit_threshold: null  # Include all episodes
+  training_format: "sft"
+  num_seeds: 100
+  val_split: 0.1
+
+push_to_hub: false
+hub_model_id: null
+

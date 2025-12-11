@@ -45,7 +45,7 @@ experiment:
     - anthropic/claude-3.5-haiku
     
     # Tier 3: Cost-Effective ($0.14-2.19/M tokens) - 4 models
-    - mistralai/mistral-small-3.1-24b-instruct  # Corrected from mistral-small-3
+    - mistralai/mistral-medium-3  # Changed: mistral-small-3.1 has provider issues
     - qwen/qwq-32b
     - deepseek/deepseek-chat
     - deepseek/deepseek-r1
@@ -59,14 +59,14 @@ experiment:
     # Tier 2: Balanced Performance ($1-6/M tokens) - 4 models
     - google/gemini-2.5-flash
     - openai/o3-mini
-    - x-ai/grok-3  # Corrected from grok-2
+    - x-ai/grok-4  # Changed: grok-3 has provider issues, using grok-4
     - anthropic/claude-3.5-sonnet
     
     # Tier 1: Premium Reasoning ($1-15/M tokens) - 5 models
-    - google/gemini-3-pro-preview  # Corrected from gemini-3-pro
+    - google/gemini-2.5-pro  # Changed: gemini-3-pro-preview returns empty
     - anthropic/claude-sonnet-4
     - openai/o1
-    - openai/gpt-5.1-chat
+    - openai/gpt-4.1  # Changed: gpt-5.1-chat returns 404
     - anthropic/claude-opus-4.5
   
   # 5 seeds for reproducibility (same as batch_config.yaml)
@@ -103,8 +103,8 @@ architecture_ablation:
   # 5 representative models (one from each major tier, using latest flagships)
   models:
     - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship
-    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship
-    - google/gemini-3-pro-preview    # Tier 1: Google flagship (corrected)
+    - openai/gpt-4.1                 # Tier 1: OpenAI flagship (changed from gpt-5.1-chat)
+    - google/gemini-2.5-pro          # Tier 1: Google flagship (changed from gemini-3)
     - deepseek/deepseek-chat         # Tier 3: DeepSeek flagship
     - meta-llama/llama-3.3-70b-instruct  # Tier 4: Open source leader
   
@@ -140,8 +140,8 @@ scaffolding_ablation:
   # Same 5 representative models as architecture ablation (latest flagships)
   models:
     - anthropic/claude-opus-4.5      # Tier 1: Anthropic flagship
-    - openai/gpt-5.1-chat            # Tier 1: OpenAI flagship
-    - google/gemini-3-pro-preview    # Tier 1: Google flagship (corrected)
+    - openai/gpt-4.1                 # Tier 1: OpenAI flagship (changed from gpt-5.1-chat)
+    - google/gemini-2.5-pro          # Tier 1: Google flagship (changed from gemini-3)
     - deepseek/deepseek-chat         # Tier 3: DeepSeek flagship
     - meta-llama/llama-3.3-70b-instruct  # Tier 4: Open source leader
   
@@ -202,20 +202,20 @@ logging:
 #   1. anthropic/claude-sonnet-4        - Best all-around agentic
 #   2. anthropic/claude-opus-4.5        - Best long autonomous tasks
 #   3. openai/o1                        - Strong reasoning
-#   4. openai/gpt-5.1-chat              - OpenAI flagship
-#   5. google/gemini-3-pro-preview      - Top multimodal (corrected)
+#   4. openai/gpt-4.1                   - OpenAI flagship (gpt-5.1-chat unavailable)
+#   5. google/gemini-2.5-pro            - Top multimodal (gemini-3 unavailable)
 #
 # Tier 2 - Balanced ($1-6/M tokens):
 #   6. anthropic/claude-3.5-sonnet      - Great value
 #   7. openai/o3-mini                   - Efficient reasoning
 #   8. google/gemini-2.5-flash          - Fast + capable
-#   9. x-ai/grok-3                      - Alternative frontier (corrected)
+#   9. x-ai/grok-4                      - Alternative frontier (grok-3 has issues)
 #
 # Tier 3 - Value ($0.14-2.19/M tokens):
 #   10. deepseek/deepseek-r1            - Best value reasoning
 #   11. deepseek/deepseek-chat          - Latest flagship
 #   12. qwen/qwq-32b                    - Reasoning specialist
-#   13. mistralai/mistral-small-3.1-24b-instruct - Fast & cheap (corrected)
+#   13. mistralai/mistral-medium-3      - Fast & cheap (mistral-small has issues)
 #
 # Tier 4 - Open Source ($0.20-2/M tokens):
 #   14. meta-llama/llama-3.3-70b-instruct - Open source leader

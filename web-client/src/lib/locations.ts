@@ -67,7 +67,8 @@ export function calculateLocationCurves(
   hasIce: boolean
 ) {
   // Adjust weather multiplier for location's exposure
-  const weatherMultiplier = 1.0 + (baseWeatherMultiplier - 1.0) * location.weather_exposure;
+  // Floor at 0 to prevent negative demand (e.g., stormy + pool's 1.8x exposure)
+  const weatherMultiplier = Math.max(0, 1.0 + (baseWeatherMultiplier - 1.0) * location.weather_exposure);
 
   // Determine price sensitivity (use hot weather sensitivity if applicable)
   const isHotWeather = weather === 'hot' || weather === 'sunny';

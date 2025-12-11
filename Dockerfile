@@ -1,6 +1,14 @@
 # Build frontend
 FROM node:20-alpine AS frontend-builder
 
+# Build args for Vite environment variables (must be set at build time)
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Make args available as env vars during build
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
 WORKDIR /app
 COPY web-client/package*.json ./
 RUN npm ci

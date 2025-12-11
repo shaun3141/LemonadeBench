@@ -10,111 +10,94 @@ and immediately outputs an action. No explicit planning or reflection phases.
 
 from typing import Any
 
-from ...models import LemonadeAction, LemonadeObservation
+from ...models import LemonadeAction, LemonadeObservation, quantity_to_tier_count
 from ..base import LemonadeAgent, EpisodeResult, TurnResult, AgentCallback
 from ..providers.base import LLMProvider, ToolResponse, LEMONADE_ACTION_TOOL
 from ..tools import get_tool, Tool
 from ..prompts import build_system_prompt, GoalFramingType
 
 
-# Base system prompt explaining the game mechanics
-BASE_SYSTEM_PROMPT = """You are an AI agent running a lemonade stand business. Your goal is to maximize profit over a 14-day summer season.
-
-## Game Mechanics
-
-**Weather Effects on Demand:**
-- HOT: Very high demand, customers willing to pay premium prices
-- SUNNY: High demand, good day for sales
-- CLOUDY: Moderate demand
-- RAINY: Low demand, few customers venture out
-- STORMY: Very low demand
-
-**Pricing Strategy:**
-- Higher prices = fewer customers but more profit per sale
-- Lower prices = more customers but less profit per sale
-- The "sweet spot" is usually around $0.50-$1.00 depending on weather
-
-**Inventory:**
-- Lemons: $0.25 each, expire after 3 days (buy in dozens for 10% discount, crates of 144 for 20% off)
-- Sugar bags: $0.50 each, don't expire
-- Cups: $0.05 each (packs of 10), don't expire
-- Ice: $0.25/bag, melts overnight unless you have a cooler
-
-**Recipe per cup:**
-- 0.25 lemons (4 cups per lemon)
-- 0.1 sugar bags (10 cups per bag)
-- 0.2 ice bags (5 cups per bag) - optional but boosts hot day sales
-
-**Upgrades:**
-- Cooler ($2.50): Ice only melts 50% per day instead of 100%
-
-**Locations:**
-- Park: High traffic, standard prices (free)
-- Downtown: Premium prices accepted, partial weather shelter ($10 permit)
-- Mall: Indoor, weather-proof, but lower traffic ($15 permit)
-- Pool: Amazing on hot days, terrible otherwise ($2.50 permit)
-
-## Strategy Tips
-1. Watch the weather forecast to plan inventory
-2. Don't overbuy perishables (lemons, ice)
-3. Higher prices on hot/sunny days, lower on bad weather
-4. Build reputation by serving customers well (don't run out of supplies!)
-5. Advertising helps on good weather days
-
-Make decisions based on the current state and your previous results. Learn from what worked and what didn't."""
-
-
 def format_observation(obs: LemonadeObservation, is_initial: bool = False) -> str:
-    """Format observation into a prompt for the LLM."""
-    if is_initial:
-        header = f"# Day {obs.day} - START OF GAME\n\n"
-    else:
-        header = f"# Day {obs.day} Results\n\n"
+    """
+    Format observation into a clear markdown prompt for the LLM.
+    
+    Uses structured markdown tables for efficient, scannable information.
+    Handles error responses with clear feedback for the model.
+    """
+    # Handle error responses - show errors and ask for retry
+    if obs.is_error_response:
+        error_list = "\n".join(f"- {error}" for error in obs.action_errors)
+        return f"""# ⚠️ ACTION ERROR - Please Retry
 
-    conditions = f"""## Current Conditions
-- Weather: {obs.weather.upper()} ({obs.temperature}°F)
-- Tomorrow's Forecast: {obs.weather_forecast}
-- Days Remaining: {obs.days_remaining}
+Your previous action was invalid:
+
+{error_list}
+
+## Current State
+| Cash | Lemons | Sugar | Cups | Ice |
+|------|--------|-------|------|-----|
+| ${obs.cash / 100:.2f} | {obs.lemons:.0f} | {obs.sugar_bags:.1f} | {obs.cups_available} | {obs.ice_bags:.0f} |
+
+**Please submit a corrected action within your budget of ${obs.cash / 100:.2f}.**
 """
-
-    finances = f"""## Finances
-- Cash: ${obs.cash / 100:.2f}
-- Total Profit So Far: ${obs.total_profit / 100:.2f}
-"""
-
+    
+    # Header with weather info
+    forecast = obs.weather_forecast.lower() if obs.weather_forecast else "unknown"
+    header = f"# Day {obs.day} | {obs.weather.upper()} {obs.temperature}°F → {forecast} tomorrow\n\n"
+    
+    # Yesterday's results (if not initial)
     if not is_initial:
-        results = f"""## Yesterday's Results
-- Cups Sold: {obs.cups_sold}
-- Revenue: ${obs.daily_revenue / 100:.2f}
-- Costs: ${obs.daily_costs / 100:.2f}
-- Daily Profit: ${obs.daily_profit / 100:.2f}
-- Customers Served: {obs.customers_served}
-- Customers Turned Away: {obs.customers_turned_away}
-"""
+        results = "## Yesterday's Results\n"
+        if obs.cups_sold > 0:
+            price_per_cup = obs.daily_revenue / obs.cups_sold / 100
+            results += f"- Sold: {obs.cups_sold} cups @ ${price_per_cup:.2f} = ${obs.daily_revenue / 100:.2f} revenue\n"
+        else:
+            results += f"- Sold: 0 cups\n"
+        results += f"- Costs: ${obs.daily_costs / 100:.2f}\n"
+        results += f"- **Profit: ${obs.daily_profit / 100:+.2f}**\n"
+        results += f"- Customers served: {obs.customers_served}"
+        if obs.customers_turned_away > 0:
+            results += f" | Turned away: {obs.customers_turned_away}"
+        results += "\n"
+        
+        # Spoilage/waste
         if obs.lemons_spoiled > 0:
-            results += f"- Lemons Spoiled: {obs.lemons_spoiled}\n"
+            results += f"- Lemons spoiled overnight: {obs.lemons_spoiled:.1f}\n"
         if obs.ice_melted > 0:
-            results += f"- Ice Melted: {obs.ice_melted}\n"
+            results += f"- Ice melted overnight: {obs.ice_melted:.1f} bags\n"
+        results += "\n"
     else:
         results = ""
-
-    inventory = f"""## Current Inventory
-- Lemons: {obs.lemons} (expiring tomorrow: {obs.lemons_expiring_tomorrow})
-- Sugar Bags: {obs.sugar_bags:.1f}
-- Cups: {obs.cups_available}
-- Ice Bags: {obs.ice_bags}
-"""
-
-    status = f"""## Stand Status
-- Location: {obs.current_location}
-- Owned Upgrades: {', '.join(obs.owned_upgrades) if obs.owned_upgrades else 'None'}
-- Reputation: {obs.reputation:.2f}
-- Customer Satisfaction: {obs.customer_satisfaction:.2f}
-"""
-
-    action_prompt = "\n## Your Turn\nDecide your actions for today. Use the take_action tool to submit your decisions."
-
-    return header + conditions + finances + results + inventory + status + action_prompt
+    
+    # Current state table
+    state = "## Current State\n"
+    state += "| Cash | Total Profit | Reputation |\n"
+    state += "|------|--------------|------------|\n"
+    state += f"| ${obs.cash / 100:.2f} | ${obs.total_profit / 100:.2f} | {obs.reputation:.2f} |\n\n"
+    
+    # Inventory table
+    inventory = "## Inventory\n"
+    inventory += "| Item | Quantity | Expiring Tomorrow |\n"
+    inventory += "|------|----------|-------------------|\n"
+    
+    # Lemons with expiry warning
+    lemon_expiry = f"{obs.lemons_expiring_tomorrow} (will spoil!)" if obs.lemons_expiring_tomorrow > 0 else "-"
+    inventory += f"| Lemons | {obs.lemons:.0f} | {lemon_expiry} |\n"
+    inventory += f"| Sugar | {obs.sugar_bags:.1f} bags | - |\n"
+    inventory += f"| Cups | {obs.cups_available} | - |\n"
+    
+    # Ice with expiry info
+    ice_expiry = f"{obs.ice_expiring_tomorrow:.0f} bags" if hasattr(obs, 'ice_expiring_tomorrow') and obs.ice_expiring_tomorrow > 0 else "-"
+    inventory += f"| Ice | {obs.ice_bags:.0f} bags | {ice_expiry} |\n\n"
+    
+    # Status
+    upgrades = ', '.join(obs.owned_upgrades) if obs.owned_upgrades else 'None'
+    status = "## Status\n"
+    status += f"- Location: {obs.current_location}\n"
+    status += f"- Upgrades: {upgrades}\n"
+    status += f"- Days remaining: {obs.days_remaining}\n"
+    
+    return header + results + state + inventory + status
 
 
 def parse_tool_input(tool_input: dict[str, Any]) -> tuple[LemonadeAction, str]:
@@ -129,12 +112,18 @@ def parse_tool_input(tool_input: dict[str, Any]) -> tuple[LemonadeAction, str]:
     if location == "null" or location is None:
         location = None
 
+    # Convert quantities to optimal tier+count (auto-selects best bulk tier)
+    lt, lc = quantity_to_tier_count("lemons", tool_input.get("buy_lemons", 0))
+    st, sc = quantity_to_tier_count("sugar", tool_input.get("buy_sugar", 0))
+    ct, cc = quantity_to_tier_count("cups", tool_input.get("buy_cups", 0))
+    it, ic = quantity_to_tier_count("ice", tool_input.get("buy_ice", 0))
+    
     action = LemonadeAction(
         price_per_cup=tool_input["price_per_cup"],
-        buy_lemons=tool_input.get("buy_lemons", 0),
-        buy_sugar=tool_input.get("buy_sugar", 0),
-        buy_cups=tool_input.get("buy_cups", 0),
-        buy_ice=tool_input.get("buy_ice", 0),
+        lemons_tier=lt, lemons_count=lc,
+        sugar_tier=st, sugar_count=sc,
+        cups_tier=ct, cups_count=cc,
+        ice_tier=it, ice_count=ic,
         advertising_spend=tool_input.get("advertising_spend", 0),
         buy_upgrade=buy_upgrade,
         location=location,
@@ -215,9 +204,8 @@ class ReactAgent(LemonadeAgent):
         for tool in self._tool_instances.values():
             self._tool_definitions.append(tool.definition)
         
-        # Build system prompt with all configured options
+        # Build system prompt using STATIC_HEADER (no custom base_prompt)
         self.system_prompt = build_system_prompt(
-            base_prompt=BASE_SYSTEM_PROMPT,
             goal_framing=goal_framing,
             math_prompt=math_prompt,
             tools_available=tool_names if tool_names else None,

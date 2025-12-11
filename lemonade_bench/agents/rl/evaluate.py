@@ -16,9 +16,24 @@ from typing import Any, Callable, Optional
 import numpy as np
 
 from ...server.lemonade_environment import LemonadeEnvironment
-from ...models import LemonadeAction, Weather
+from ...models import LemonadeAction, Weather, BULK_PRICING
 from .gym_wrapper import LemonadeGymEnv
 from .spaces import decode_action
+
+
+def _qty_to_tier_count(supply_type: str, qty: int) -> tuple[int, int]:
+    """Helper to convert quantity to tier+count."""
+    if qty <= 0:
+        return (1, 0)
+    pricing = BULK_PRICING.get(supply_type)
+    if not pricing:
+        return (1, 0)
+    for i, tier in enumerate(pricing.tiers):
+        if tier.quantity >= qty:
+            return (i + 1, 1)
+        if i == len(pricing.tiers) - 1:
+            return (i + 1, (qty + tier.quantity - 1) // tier.quantity)
+    return (1, qty)
 
 
 @dataclass
@@ -222,21 +237,26 @@ def evaluate_rule_based_agent(
             else:  # rainy or stormy
                 price = 50
             
-            # Simple inventory management
-            buy_lemons = 15 if obs.lemons < 10 else 0
-            buy_sugar = 5 if obs.sugar_bags < 5 else 0
-            buy_cups = 50 if obs.cups_available < 30 else 0
-            buy_ice = 10 if obs.ice_bags < 5 and weather in ["hot", "sunny"] else 0
+            # Simple inventory management - convert to tier+count
+            target_lemons = 15 if obs.lemons < 10 else 0
+            target_sugar = 5 if obs.sugar_bags < 5 else 0
+            target_cups = 50 if obs.cups_available < 30 else 0
+            target_ice = 10 if obs.ice_bags < 5 and weather in ["hot", "sunny"] else 0
+            
+            lt, lc = _qty_to_tier_count("lemons", target_lemons)
+            st, sc = _qty_to_tier_count("sugar", target_sugar)
+            ct, cc = _qty_to_tier_count("cups", target_cups)
+            it, ic = _qty_to_tier_count("ice", target_ice)
             
             # Advertising on good weather
             advertising = 100 if weather in ["hot", "sunny"] else 0
             
             action = LemonadeAction(
                 price_per_cup=price,
-                buy_lemons=buy_lemons,
-                buy_sugar=buy_sugar,
-                buy_cups=buy_cups,
-                buy_ice=buy_ice,
+                lemons_tier=lt, lemons_count=lc,
+                sugar_tier=st, sugar_count=sc,
+                cups_tier=ct, cups_count=cc,
+                ice_tier=it, ice_count=ic,
                 advertising_spend=advertising,
             )
             
@@ -295,16 +315,20 @@ def evaluate_constant_agent(
         episode_cups = 0
         
         while not obs.done:
-            # Fixed price, simple restocking
-            buy_lemons = 12 if obs.lemons < 10 else 0
-            buy_sugar = 5 if obs.sugar_bags < 5 else 0
-            buy_cups = 50 if obs.cups_available < 30 else 0
+            # Fixed price, simple restocking - convert to tier+count
+            target_lemons = 12 if obs.lemons < 10 else 0
+            target_sugar = 5 if obs.sugar_bags < 5 else 0
+            target_cups = 50 if obs.cups_available < 30 else 0
+            
+            lt, lc = _qty_to_tier_count("lemons", target_lemons)
+            st, sc = _qty_to_tier_count("sugar", target_sugar)
+            ct, cc = _qty_to_tier_count("cups", target_cups)
             
             action = LemonadeAction(
                 price_per_cup=price,
-                buy_lemons=buy_lemons,
-                buy_sugar=buy_sugar,
-                buy_cups=buy_cups,
+                lemons_tier=lt, lemons_count=lc,
+                sugar_tier=st, sugar_count=sc,
+                cups_tier=ct, cups_count=cc,
             )
             
             obs = env.step(action)

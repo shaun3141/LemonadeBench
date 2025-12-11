@@ -62,12 +62,32 @@ rl = [
     "numpy>=1.24.0",
     "tensorboard>=2.15.0",
 ]
+rft = [
+    # Core training dependencies
+    "torch>=2.1.0",
+    "transformers>=4.45.0",
+    "datasets>=2.18.0",
+    "trl>=0.9.0",
+    "peft>=0.12.0",
+    "bitsandbytes>=0.43.0",  # For 4-bit quantization
+    "accelerate>=0.30.0",
+    # Optional but recommended for faster training
+    # "unsloth @ git+https://github.com/unslothai/unsloth.git",
+]
 all = [
     "openai>=1.0.0",
     "gymnasium>=0.29.0",
     "stable-baselines3>=2.3.0",
     "sb3-contrib>=2.3.0",
     "tensorboard>=2.15.0",
+    # RFT deps
+    "torch>=2.1.0",
+    "transformers>=4.45.0",
+    "datasets>=2.18.0",
+    "trl>=0.9.0",
+    "peft>=0.12.0",
+    "bitsandbytes>=0.43.0",
+    "accelerate>=0.30.0",
 ]
 
 [project.scripts]

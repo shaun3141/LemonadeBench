@@ -350,9 +350,9 @@ Vite proxies `/api/*` to the backend server (configured in `vite.config.ts`).
 | Ingredient  | Cost   | Yield      | Expiration |
 |-------------|--------|------------|------------|
 | Lemon       | $0.25  | 4 cups     | 3 days     |
-| Sugar Bag   | $1.00  | 10 cups    | Never      |
+| Sugar Bag   | $0.50  | 10 cups    | Never      |
 | Cup         | $0.05  | 1 serving  | Never      |
-| Ice Bag     | $0.50  | 5 cups     | **Overnight** |
+| Ice Bag     | $0.25  | 5 cups     | **Overnight** |
 
 ### Weather Impact
 

@@ -36,54 +36,53 @@ class ToolResponse:
 
 
 # Standard tool definition for the lemonade action
+# LLM specifies quantities; system auto-selects optimal bulk tier
 LEMONADE_ACTION_TOOL = {
     "name": "take_action",
-    "description": "Submit your daily lemonade stand decisions. Set prices, buy supplies, and optionally advertise or buy upgrades.",
+    "description": "Submit daily decisions: set price, buy supplies, optionally advertise/upgrade/relocate.",
     "input_schema": {
         "type": "object",
         "properties": {
             "reasoning": {
                 "type": "string",
-                "description": "Brief explanation of your strategy for this turn (1-2 sentences)"
+                "description": "Brief explanation of your strategy (1-2 sentences)"
             },
             "price_per_cup": {
                 "type": "integer",
-                "description": "Price to charge per cup in cents (e.g., 75 = $0.75). Typical range: 25-200 cents."
+                "description": "Price in cents (e.g., 75 = $0.75)"
             },
             "buy_lemons": {
                 "type": "integer",
-                "description": "Number of lemons to purchase. Each lemon makes 4 cups. Buy 12+ for 10% discount, 144+ for 20% discount.",
+                "description": "Number of lemons to buy (bulk discounts auto-applied)",
                 "default": 0
             },
             "buy_sugar": {
                 "type": "integer",
-                "description": "Number of sugar bags to purchase. Each bag makes 10 cups.",
+                "description": "Number of sugar bags to buy",
                 "default": 0
             },
             "buy_cups": {
                 "type": "integer",
-                "description": "Number of disposable cups to purchase.",
+                "description": "Number of cups to buy",
                 "default": 0
             },
             "buy_ice": {
                 "type": "integer",
-                "description": "Number of ice bags to purchase. Each bag makes 5 cups. Melts overnight unless you have a cooler.",
+                "description": "Number of ice bags to buy",
                 "default": 0
             },
             "advertising_spend": {
                 "type": "integer",
-                "description": "Amount to spend on advertising in cents. Increases customer awareness.",
+                "description": "Amount in cents",
                 "default": 0
             },
             "buy_upgrade": {
                 "type": "string",
-                "description": "Upgrade to purchase: 'cooler' ($2.50) - reduces ice melt to 50%",
                 "enum": ["cooler", None],
                 "default": None
             },
             "location": {
                 "type": "string",
-                "description": "Location to set up: 'park' (free), 'downtown' ($10), 'mall' ($15), 'pool' ($2.50)",
                 "enum": ["park", "downtown", "mall", "pool", None],
                 "default": None
             }

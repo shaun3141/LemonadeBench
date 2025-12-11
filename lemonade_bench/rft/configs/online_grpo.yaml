@@ -1,0 +1,98 @@
+# Online GRPO Configuration for LemonadeBench
+# Optimized for NVIDIA 5090 (24GB VRAM)
+#
+# This config runs the full 3-phase training pipeline:
+#   Phase 1: Warmup SFT from Claude trajectories
+#   Phase 2: Online GRPO with environment rewards
+#   Phase 3: Evaluation against baselines
+#
+# Prerequisites:
+#   1. Install dependencies: pip install -e ".[rft]"
+#   2. Start vLLM server:
+#      vllm serve Qwen/Qwen3-30B-A3B-Instruct-2507 \
+#        --quantization awq \
+#        --port 8000 \
+#        --gpu-memory-utilization 0.9
+#
+# Usage:
+#   python -m lemonade_bench.rft.online_grpo --config lemonade_bench/rft/configs/online_grpo.yaml
+
+# ============================================================================
+# Model Configuration
+# ============================================================================
+base_model: "Qwen/Qwen3-30B-A3B-Instruct-2507"
+output_dir: "./rft_output/online_grpo"
+
+# vLLM server settings
+vllm_base_url: "http://localhost:8000/v1"
+
+# ============================================================================
+# Phase 1: Warmup SFT
+# ============================================================================
+# Collect high-quality trajectories from Claude and do supervised fine-tuning
+# to give Qwen a good starting point before online training.
+
+warmup_provider: "anthropic"
+warmup_model: "claude-sonnet-4-20250514"
+warmup_episodes: 100  # Number of expert trajectories to collect
+warmup_epochs: 1      # SFT epochs (1 is usually enough for warmup)
+warmup_successful_only: true  # Only use episodes with positive profit
+
+# ============================================================================
+# Phase 2: Online GRPO
+# ============================================================================
+# Iterative training loop:
+#   1. Collect rollouts with current policy
+#   2. Compute rewards (profit) and advantages
+#   3. Train with GRPO loss
+#   4. Repeat
+#
+# Key parameters (from Tinker RL hyperparams research):
+#   - seeds_per_iteration = batch_size (unique environments)
+#   - rollouts_per_seed = group_size (rollouts for GRPO grouping)
+#   - LR should scale as LR ∝ √batch_size when changing batch size
+#   - KL divergence should stay < 0.01 for stable training
+#
+# See: https://tinker-docs.thinkingmachines.ai/rl/rl-hyperparams
+
+num_iterations: 15       # Number of training iterations
+seeds_per_iteration: 8   # batch_size: unique environment seeds
+rollouts_per_seed: 8     # group_size: rollouts per seed for GRPO
+# Total rollouts per iteration = 8 × 8 = 64
+
+# GRPO hyperparameters
+# LR formula: 5e-5 × 10 × (2000/H)^P ≈ 2e-4 to 5e-4 for Qwen ~30B
+# Scale as LR ∝ √batch_size if you change seeds_per_iteration
+learning_rate: 0.0002    # 2e-4 (for batch_size=8, LoRA on ~30B model)
+kl_coef: 0.1             # KL divergence penalty coefficient
+normalize_rewards: true  # Normalize profits to [-1, 1]
+max_kl_divergence: 0.01  # Training stable when KL < 0.01 (Tinker guideline)
+
+# ============================================================================
+# LoRA Configuration (optimized for 5090 24GB)
+# ============================================================================
+# RL requires very low capacity - small ranks work as well as large ranks
+# Using r=16 saves memory while maintaining equivalent RL performance
+lora_r: 16              # LoRA rank (RL needs less capacity than SL)
+lora_alpha: 32          # LoRA alpha (typically 2×r)
+load_in_4bit: true      # QLoRA for memory efficiency (~10GB)
+gradient_checkpointing: true  # Save memory during backward pass
+
+# ============================================================================
+# Phase 3: Evaluation
+# ============================================================================
+# Compare fine-tuned model against baselines on held-out seeds.
+
+eval_seeds:
+  - 999
+  - 1000
+  - 1001
+  - 1002
+  - 1003
+eval_episodes_per_model: 5
+
+# ============================================================================
+# Checkpointing
+# ============================================================================
+save_every_n_iterations: 5
+

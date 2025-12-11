@@ -280,6 +280,35 @@ class SupabaseLogger:
         result = query.execute()
         return len(result.data) > 0
 
+    def get_all_existing_runs(self, completed_only: bool = False) -> list[dict]:
+        """
+        Fetch all existing runs for batch deduplication.
+        
+        Returns a list of dicts with: model_name, seed, goal_framing, architecture, scaffolding
+        This is much faster than checking each run individually.
+        """
+        # Fetch all runs with their model info in one query
+        query = self.client.table("runs").select(
+            "seed, goal_framing, architecture, scaffolding, completed_at, models!inner(name)"
+        )
+        
+        if completed_only:
+            query = query.not_.is_("completed_at", "null")
+        
+        result = query.execute()
+        
+        # Transform to flat structure
+        runs = []
+        for row in result.data:
+            runs.append({
+                "model_name": row["models"]["name"],
+                "seed": row["seed"],
+                "goal_framing": row["goal_framing"],
+                "architecture": row["architecture"],
+                "scaffolding": row["scaffolding"],
+            })
+        return runs
+
 
 class SupabaseReader:
     """Reader for fetching benchmark data from Supabase (uses anon key)."""

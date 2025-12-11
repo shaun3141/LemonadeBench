@@ -4,11 +4,8 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
-  Calendar,
   Star,
   AlertTriangle,
-  Wallet,
-  PiggyBank,
   Target,
   Citrus,
 } from 'lucide-react';
@@ -26,110 +23,75 @@ export function HumanObservation({ observation }: HumanObservationProps) {
 
   return (
     <div className="space-y-4">
-      {/* Goal Banner - Only show on first day */}
-      {isFirstDay && (
-        <Card variant="retro-hero" className="animate-retro-pop">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+      {/* Combined Status Banner */}
+      <Card variant="retro-hero" className={isFirstDay ? 'animate-retro-pop' : ''}>
+        <CardContent className="p-4">
+          <div className="flex items-stretch gap-4">
+            {/* Left: Welcome/Status */}
+            <div className="flex items-center gap-3 flex-1">
               <div className="bg-white/20 p-3 rounded-xl border-2 border-white/30">
                 <Citrus className="h-10 w-10 text-yellow-300 drop-shadow-[2px_2px_0_rgba(0,0,0,0.3)]" />
               </div>
               <div>
                 <h1 className="font-display text-2xl flex items-center gap-2 drop-shadow-[2px_2px_0_rgba(0,0,0,0.3)]">
-                  Welcome to LemonadeBench!
+                  {isFirstDay ? 'Welcome to LemonadeBench!' : `Day ${observation.day} of ${totalDays}`}
                 </h1>
                 <p className="text-white/90 text-sm flex items-center gap-1">
                   <Target className="h-3 w-3" />
-                  Goal: <strong>Maximize profit</strong> over {totalDays} days of summer!
+                  {isFirstDay ? (
+                    <>Goal: <strong>Maximize profit</strong> over {totalDays} days of summer!</>
+                  ) : (
+                    <>{observation.days_remaining} days remaining</>
+                  )}
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Top Row: Day/Weather, Financials, Reputation - 3 columns */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Day and Weather */}
-        <Card variant="retro-yellow">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="h-5 w-5 text-[#FF6B35]" />
-              <h2 className="font-display text-lg text-[#5D4037]">
-                Day {observation.day}/{observation.day + observation.days_remaining}
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <WeatherIcon weather={observation.weather} size={28} />
-              <div>
-                <p className="text-sm font-semibold text-[#5D4037]">
-                  {getWeatherEmoji(observation.weather)} {getWeatherLabel(observation.weather)} · {observation.temperature}°F
+            {/* Right: Status Sub-cards */}
+            <div className="flex gap-2">
+              {/* Weather Mini-card */}
+              <div className="bg-white/20 backdrop-blur rounded-xl p-3 border-2 border-white/30 min-w-[100px]">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <WeatherIcon weather={observation.weather} size={20} />
+                  <span className="text-xs font-semibold text-white/90">{observation.temperature}°F</span>
+                </div>
+                <p className="text-[10px] text-white/70 leading-tight">
+                  {getWeatherLabel(observation.weather)}
                 </p>
-                <p className="text-xs text-[#8B4513]/70">
-                  Tomorrow: {getWeatherEmoji(observation.weather_forecast)} {getWeatherLabel(observation.weather_forecast)}
+                <p className="text-[10px] text-white/60 leading-tight">
+                  → {getWeatherEmoji(observation.weather_forecast)} {getWeatherLabel(observation.weather_forecast)}
                 </p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Financial Summary */}
-        <Card variant="retro-green">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-5 w-5 text-[#228B22]" />
-              <h3 className="font-display text-sm text-[#1B5E20]">Money</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-xs text-[#1B5E20]/70 flex items-center gap-1">
-                  <Wallet className="h-3 w-3" /> Cash
+              {/* Money Mini-card */}
+              <div className="bg-white/20 backdrop-blur rounded-xl p-3 border-2 border-white/30 min-w-[100px]">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <DollarSign className="h-4 w-4 text-[#7FFF00]" />
+                  <span className="text-xs font-semibold text-white/90">Money</span>
+                </div>
+                <p className="font-pixel text-sm text-[#7FFF00] drop-shadow-[1px_1px_0_rgba(0,0,0,0.5)]">
+                  {formatCents(observation.cash)}
                 </p>
-                <p className="font-pixel text-sm stat-retro-money">{formatCents(observation.cash)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[#1B5E20]/70 flex items-center gap-1">
-                  <PiggyBank className="h-3 w-3" /> Profit
-                </p>
-                <p className={`font-pixel text-sm ${observation.total_profit >= 0 ? 'stat-retro-positive' : 'stat-retro-negative'}`}>
-                  {formatCents(observation.total_profit)}
+                <p className={`text-[10px] ${observation.total_profit >= 0 ? 'text-[#7FFF00]' : 'text-[#FF6B6B]'}`}>
+                  Profit: {formatCents(observation.total_profit)}
                 </p>
               </div>
-            </div>
-            {!isFirstDay && (
-              <div className="mt-2 pt-2 border-t border-[#388E3C] text-xs">
-                <span className="text-[#1B5E20]/70">Yesterday: </span>
-                <span className={`font-semibold ${observation.daily_profit >= 0 ? 'text-[#2ECC71]' : 'text-[#FF4757]'}`}>
-                  {observation.daily_profit >= 0 ? '+' : ''}
-                  {formatCents(observation.daily_profit)}
-                </span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Reputation */}
-        <Card variant="retro-blue">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="h-5 w-5 text-[#FFD700]" />
-              <h3 className="font-display text-sm text-[#0D47A1]">Rating</h3>
-            </div>
-            <p className="text-xl">{getReputationStars(observation.reputation)}</p>
-            <div className="mt-2">
-              <div className="w-full bg-[#0D47A1]/20 rounded-full h-2 border border-[#1976D2]">
-                <div
-                  className="bg-gradient-to-r from-[#FFD700] to-[#FFA500] h-full rounded-full transition-all duration-500"
-                  style={{ width: `${observation.reputation * 100}%` }}
-                />
+              {/* Rating Mini-card */}
+              <div className="bg-white/20 backdrop-blur rounded-xl p-3 border-2 border-white/30 min-w-[90px]">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Star className="h-4 w-4 text-[#FFD700]" />
+                  <span className="text-xs font-semibold text-white/90">Rating</span>
+                </div>
+                <p className="text-sm leading-none">{getReputationStars(observation.reputation)}</p>
+                <p className="text-[10px] text-white/70 mt-1">
+                  {(observation.reputation * 100).toFixed(0)}% happy
+                </p>
               </div>
-              <p className="text-xs text-[#0D47A1]/70 mt-1">
-                {(observation.reputation * 100).toFixed(0)}% happy customers
-              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Yesterday's Sales - Only show if not first day */}
       {!isFirstDay && (

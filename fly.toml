@@ -2,6 +2,9 @@ app = 'lemonade-bench'
 primary_region = 'sjc'
 
 [build]
+  [build.args]
+    VITE_SUPABASE_URL = "https://ozjqgvanoeillamlbywo.supabase.co"
+    VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im96anFndmFub2VpbGxhbWxieXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxNDM0NDAsImV4cCI6MjA4MDcxOTQ0MH0.UfiTSsCTCyJXl3-0o9R_Zd0UsrXjjp37akhUTCWD_7I"
 
 [http_service]
   internal_port = 8080

@@ -53,7 +53,7 @@ export function RecipeDialog({ disabled }: RecipeDialogProps) {
               <div className="text-xs text-muted-foreground mt-1">
                 makes {CUPS_PER_SUGAR_BAG} cups
               </div>
-              <div className="text-xs text-pink-600 mt-1">$1.00 each</div>
+              <div className="text-xs text-pink-600 mt-1">$0.50 each</div>
               <div className="text-xs text-green-600 mt-1 flex items-center justify-center gap-1">
                 <Check className="h-3 w-3" /> Never expires
               </div>
@@ -65,7 +65,7 @@ export function RecipeDialog({ disabled }: RecipeDialogProps) {
               <div className="text-xs text-muted-foreground mt-1">
                 makes {CUPS_PER_ICE_BAG} cups
               </div>
-              <div className="text-xs text-cyan-600 mt-1">$0.50 each</div>
+              <div className="text-xs text-cyan-600 mt-1">$0.25 each</div>
               <div className="text-xs text-red-500 mt-1 flex items-center justify-center gap-1">
                 <Timer className="h-3 w-3" /> Melts overnight!
               </div>

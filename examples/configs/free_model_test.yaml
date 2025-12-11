@@ -1,0 +1,16 @@
+# Free model context optimization test
+name: "Context Optimization Test - Free Model"
+
+models:
+  - provider: openrouter
+    name: google/gemini-2.0-flash-exp:free
+    seeds: [42]
+    tags: [gemini, context-test, free]
+    architecture: react
+    goal_framing: baseline
+    tools: []
+
+logging:
+  local: true
+  supabase: false
+  dir: ./runs/context_test

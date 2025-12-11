@@ -43,8 +43,15 @@ print(f"Sold {result.observation.cups_sold} cups!")
 ### Costs
 
 - Lemon: $0.25 (makes 4 cups)
-- Sugar bag: $1.00 (makes 10 cups)
+- Sugar bag: $0.50 (makes 10 cups)
 - Cup: $0.05
+- Ice bag: $0.25 (makes 5 cups)
+
+### Bulk Discounts
+
+Bulk discounts are auto-applied based on quantity:
+- 10% off at tier 2 thresholds (dozen lemons, 5 sugar/ice, 50 cups)
+- 20% off at tier 3 thresholds (crate lemons, 20 sugar/ice, 250 cups)
 
 ## API
 

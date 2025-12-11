@@ -1,0 +1,16 @@
+# Clean test - different seed
+name: "Context Optimization Test - Clean"
+
+models:
+  - provider: anthropic
+    name: claude-3-5-haiku-latest
+    seeds: [100]
+    tags: [haiku, context-test, clean]
+    architecture: react
+    goal_framing: baseline
+    tools: []
+
+logging:
+  local: true
+  supabase: false
+  dir: ./runs/context_test

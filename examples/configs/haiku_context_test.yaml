@@ -1,0 +1,19 @@
+# Claude Haiku context optimization test
+# Run with: lemonade batch examples/configs/haiku_context_test.yaml
+
+name: "Context Optimization Test - Claude Haiku"
+
+models:
+  - provider: openrouter
+    name: anthropic/claude-3.5-haiku
+    seeds: [42]
+    tags: [haiku, context-test]
+    architecture: react
+    goal_framing: baseline
+    tools: []
+
+logging:
+  local: true
+  supabase: false
+  dir: ./runs/context_test
+

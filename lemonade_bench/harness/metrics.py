@@ -20,6 +20,20 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..agents.base import EpisodeResult, TurnResult
+from ..models import BULK_PRICING
+
+
+def _get_purchased_quantity(action, supply_type: str) -> int:
+    """Calculate the actual quantity purchased from tier+count."""
+    tier = getattr(action, f"{supply_type}_tier", 1)
+    count = getattr(action, f"{supply_type}_count", 0)
+    if count <= 0:
+        return 0
+    pricing = BULK_PRICING.get(supply_type)
+    if not pricing:
+        return 0
+    tier_idx = min(tier - 1, len(pricing.tiers) - 1)
+    return pricing.tiers[tier_idx].quantity * count
 
 
 # Weather-optimal price ranges (cents) based on game mechanics
@@ -254,8 +268,8 @@ def compute_diagnostic_metrics(result: EpisodeResult) -> DiagnosticMetrics:
         # Inventory metrics
         total_lemons_spoiled += obs.lemons_spoiled
         total_ice_melted += obs.ice_melted
-        total_lemons_purchased += action.buy_lemons
-        total_ice_purchased += action.buy_ice
+        total_lemons_purchased += _get_purchased_quantity(action, "lemons")
+        total_ice_purchased += _get_purchased_quantity(action, "ice")
         
         # Demand metrics
         total_customers_served += turn.customers_served

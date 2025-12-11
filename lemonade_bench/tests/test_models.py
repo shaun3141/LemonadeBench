@@ -158,8 +158,8 @@ class TestBulkPricing:
     def test_cups_bulk_pricing(self):
         """Test cups bulk pricing tiers."""
         cups = BULK_PRICING["cups"]
-        assert cups.unit_name == "Pack"
-        assert cups.base_price == 50  # $0.50 per 10-pack
+        assert cups.unit_name == "Cup"
+        assert cups.base_price == 5  # $0.05 per cup
 
     def test_ice_bulk_pricing(self):
         """Test ice bulk pricing tiers."""
@@ -242,12 +242,13 @@ class TestCalculateBulkCost:
 
     def test_cups_bulk_discount(self):
         """Test cups bulk purchasing."""
-        # Note: cups are sold in packs of 10, but the quantity is cups not packs
-        # Base price is $0.50 per 10-pack (5 cents per cup)
-        # 10 cups = 1 pack at $0.50
-        assert calculate_bulk_cost("cups", 10) == 500
-        # 50 cups = 5 packs at sleeve discount (10% off)
-        assert calculate_bulk_cost("cups", 50) == int(2500 * 0.90)
+        # Cups are $0.05 each
+        # 10 cups = $0.50 (Pack tier, no discount)
+        assert calculate_bulk_cost("cups", 10) == 50
+        # 50 cups = $2.50 base, with 10% off = $2.25 (Sleeve tier)
+        assert calculate_bulk_cost("cups", 50) == int(250 * 0.90)
+        # 250 cups = $12.50 base, with 20% off = $10.00 (Case tier)
+        assert calculate_bulk_cost("cups", 250) == int(1250 * 0.80)
 
 
 class TestLemonadeAction:
@@ -257,10 +258,14 @@ class TestLemonadeAction:
         """Test action with only required fields."""
         action = LemonadeAction(price_per_cup=50)
         assert action.price_per_cup == 50
-        assert action.buy_lemons == 0
-        assert action.buy_sugar == 0
-        assert action.buy_cups == 0
-        assert action.buy_ice == 0
+        assert action.lemons_tier == 1
+        assert action.lemons_count == 0
+        assert action.sugar_tier == 1
+        assert action.sugar_count == 0
+        assert action.cups_tier == 1
+        assert action.cups_count == 0
+        assert action.ice_tier == 1
+        assert action.ice_count == 0
         assert action.advertising_spend == 0
         assert action.buy_upgrade is None
 
@@ -268,18 +273,22 @@ class TestLemonadeAction:
         """Test action with all fields populated."""
         action = LemonadeAction(
             price_per_cup=100,
-            buy_lemons=20,
-            buy_sugar=5,
-            buy_cups=100,
-            buy_ice=10,
+            lemons_tier=2, lemons_count=2,   # 2 dozen = 24 lemons
+            sugar_tier=2, sugar_count=1,     # 1 case = 5 bags
+            cups_tier=3, cups_count=1,       # 1 case = 250 cups
+            ice_tier=2, ice_count=2,         # 2 cooler packs = 10 bags
             advertising_spend=200,
             buy_upgrade="cooler",
         )
         assert action.price_per_cup == 100
-        assert action.buy_lemons == 20
-        assert action.buy_sugar == 5
-        assert action.buy_cups == 100
-        assert action.buy_ice == 10
+        assert action.lemons_tier == 2
+        assert action.lemons_count == 2
+        assert action.sugar_tier == 2
+        assert action.sugar_count == 1
+        assert action.cups_tier == 3
+        assert action.cups_count == 1
+        assert action.ice_tier == 2
+        assert action.ice_count == 2
         assert action.advertising_spend == 200
         assert action.buy_upgrade == "cooler"
 

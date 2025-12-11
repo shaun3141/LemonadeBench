@@ -174,13 +174,13 @@ BULK_PRICING: Dict[str, BulkPricing] = {
         ],
     ),
     "cups": BulkPricing(
-        unit_name="Pack",
-        unit_name_plural="Packs",
-        base_price=50,  # $0.50 per 10-pack (5 cents per cup)
+        unit_name="Cup",
+        unit_name_plural="Cups",
+        base_price=5,  # $0.05 per cup
         tiers=[
-            BulkTier(name="Pack", quantity=10, discount_percent=0.0),  # 10 cups
-            BulkTier(name="Sleeve", quantity=50, discount_percent=0.10),  # 50 cups, 10% off
-            BulkTier(name="Case", quantity=250, discount_percent=0.20),  # 250 cups, 20% off
+            BulkTier(name="Pack", quantity=10, discount_percent=0.0),  # 10 cups = $0.50
+            BulkTier(name="Sleeve", quantity=50, discount_percent=0.10),  # 50 cups = $2.25 (10% off)
+            BulkTier(name="Case", quantity=250, discount_percent=0.20),  # 250 cups = $10.00 (20% off)
         ],
     ),
     "ice": BulkPricing(
@@ -230,6 +230,85 @@ def calculate_bulk_cost(supply_type: str, quantity: int) -> int:
     return base_total - discount_amount
 
 
+def calculate_tier_purchase(supply_type: str, tier: int, count: int) -> tuple[int, int]:
+    """
+    Calculate cost and quantity for a tier-based purchase.
+    
+    Args:
+        supply_type: One of "lemons", "sugar", "cups", "ice"
+        tier: Tier number (1, 2, or 3)
+        count: How many of this tier to buy
+        
+    Returns:
+        Tuple of (total_cost_cents, total_quantity)
+    """
+    if count <= 0 or tier < 1:
+        return (0, 0)
+    
+    pricing = BULK_PRICING.get(supply_type)
+    if not pricing:
+        return (0, 0)
+    
+    # Convert tier number (1-3) to index (0-2)
+    tier_index = tier - 1
+    if tier_index >= len(pricing.tiers):
+        tier_index = len(pricing.tiers) - 1  # Cap at max tier
+    
+    tier_info = pricing.tiers[tier_index]
+    quantity_per_tier = tier_info.quantity
+    discount = tier_info.discount_percent
+    
+    total_quantity = quantity_per_tier * count
+    base_cost = total_quantity * pricing.base_price
+    discounted_cost = base_cost - int(base_cost * discount)
+    
+    return (discounted_cost, total_quantity)
+
+
+def quantity_to_tier_count(supply_type: str, target_qty: int) -> tuple[int, int]:
+    """
+    Convert a target quantity to the optimal tier+count combination.
+    
+    Automatically selects the best tier that achieves at least the target quantity
+    while maximizing bulk discounts.
+    
+    Args:
+        supply_type: One of "lemons", "sugar", "cups", "ice"
+        target_qty: Target quantity to purchase
+        
+    Returns:
+        Tuple of (tier, count) where tier is 1-3
+    """
+    if target_qty <= 0:
+        return (1, 0)
+    
+    pricing = BULK_PRICING.get(supply_type)
+    if not pricing:
+        return (1, 0)
+    
+    # Find the tier that best matches the target quantity
+    # Strategy: use the largest tier where tier_qty <= target_qty, buy enough to cover
+    best_tier = 1
+    best_count = target_qty
+    
+    for tier_idx, tier in enumerate(pricing.tiers):
+        tier_num = tier_idx + 1
+        tier_qty = tier.quantity
+        
+        if tier_qty <= target_qty:
+            # This tier could work - calculate count needed
+            count_needed = (target_qty + tier_qty - 1) // tier_qty  # Ceiling division
+            best_tier = tier_num
+            best_count = count_needed
+        elif tier_idx == 0:
+            # Target is less than smallest tier, buy singles
+            best_tier = 1
+            best_count = target_qty
+            break
+    
+    return (best_tier, best_count)
+
+
 @dataclass(kw_only=True)
 class LemonadeAction(Action):
     """
@@ -237,22 +316,29 @@ class LemonadeAction(Action):
     
     The agent decides daily operations:
     - price_per_cup: How much to charge (in cents, e.g., 50 = $0.50)
-    - buy_lemons: How many lemons to purchase (optional) - PERISHABLE: expires after 3 days
-    - buy_sugar: How many bags of sugar to purchase (optional) - Non-perishable
-    - buy_cups: How many disposable cups to purchase (optional) - Non-perishable
-    - buy_ice: How many bags of ice to purchase (optional) - PERISHABLE: melts based on cooler
+    - Supply purchases use tier (1-3) + count format:
+      - Tier 1: Single units (no discount)
+      - Tier 2: Bulk units (10% off)
+      - Tier 3: Wholesale (20% off)
     - advertising_spend: How much to spend on signs/advertising (optional)
     - buy_upgrade: Stand upgrade to purchase (optional)
-    - location: Where to set up the stand (optional) - costs $10 permit fee to switch
+    - location: Where to set up the stand (optional) - costs permit fee to switch
     
     Note: Cups are made on-demand based on customer traffic. You will automatically
     serve as many customers as your supplies allow.
     """
     price_per_cup: int  # cents
-    buy_lemons: int = 0
-    buy_sugar: int = 0
-    buy_cups: int = 0
-    buy_ice: int = 0
+    
+    # Supply purchases: tier (1=single, 2=bulk, 3=wholesale) + count
+    lemons_tier: int = 1  # 1=Single, 2=Dozen, 3=Crate
+    lemons_count: int = 0
+    sugar_tier: int = 1  # 1=Single, 2=Case, 3=Pallet
+    sugar_count: int = 0
+    cups_tier: int = 1  # 1=Pack(10), 2=Sleeve(50), 3=Case(250)
+    cups_count: int = 0
+    ice_tier: int = 1  # 1=Single, 2=Cooler(5), 3=Delivery(20)
+    ice_count: int = 0
+    
     advertising_spend: int = 0  # cents
     buy_upgrade: Optional[str] = None  # StandUpgrade value to purchase
     location: Optional[str] = None  # Location value to set up at (None = stay at current location)

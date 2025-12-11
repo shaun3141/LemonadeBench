@@ -178,11 +178,11 @@ class ExperimentConfig:
                     spec_provider = "openrouter"
             
             # Use global provider override if specified, otherwise use spec provider
-            # For openrouter, the name should be the full model spec (e.g., "openai/gpt-4o-mini")
+            # For openrouter and litellm, the name should be the full model spec (e.g., "openai/gpt-4o-mini", "gemini/gemini-3-pro")
             if self.provider:
                 provider = self.provider
-                # If using openrouter, keep the full model spec as the name
-                if self.provider == "openrouter" and "/" in model_spec:
+                # If using openrouter or litellm, keep the full model spec as the name
+                if self.provider in ("openrouter", "litellm") and "/" in model_spec:
                     name = model_spec
             else:
                 provider = spec_provider
