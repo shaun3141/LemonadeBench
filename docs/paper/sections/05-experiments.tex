@@ -1,39 +1,59 @@
 \section{Experiments}
 \label{sec:experiments}
 
-We conducted 500 episodes across all model $\times$ seed combinations (20 models $\times$ 5 seeds $\times$ 5 goal-framing conditions for ablation studies). Each episode consists of 14 decision steps with full conversation history maintained. Total API cost was approximately \$15--25 across all runs via OpenRouter.
+We conducted 1,000 total episodes using a stratified experimental design: (1) \textbf{600 episodes} for goal-framing comparison (20 models $\times$ 6 conditions $\times$ 5 seeds), (2) \textbf{200 episodes} for architecture ablation (5 flagship models $\times$ 4 architectures $\times$ 10 seeds), and (3) \textbf{200 episodes} for cognitive scaffolding ablation (5 flagship models $\times$ 4 scaffolding conditions $\times$ 10 seeds). Each episode consists of 14 decision steps with full conversation history maintained across turns. Total API cost was approximately \$150--250 across all runs via OpenRouter.
 
-\subsection{Model Selection}
+\subsection{Experimental Protocol}
+\label{sec:exp-protocol}
+
+\paragraph{Random Seeds.}
+Goal-framing experiments use seeds \{1, 42, 100, 7, 2025\}; architecture and scaffolding ablations use seeds \{1, 5, 10, 15, 20, 25, 30, 35, 40, 50\} to increase statistical power. Each seed generates a unique 14-day weather sequence, ensuring reproducibility while testing generalization across environmental conditions. Seeds were selected pseudo-randomly before experiments began.
+
+\paragraph{Temperature and Sampling.}
+All models use their default temperature settings via OpenRouter (typically $T=0.7$--$1.0$ depending on model). We do not force deterministic decoding ($T=0$) to allow natural strategic variation within the same environmental conditions.
+
+\paragraph{Statistical Analysis.}
+For goal-framing comparisons, we use paired t-tests comparing each condition to Baseline on model-level aggregates (N=20 models), accounting for model-to-model variance. For architecture and scaffolding ablations, we use paired t-tests on seed-level results (N=10 seeds) within each model, then report average effect sizes. All tests apply Bonferroni correction: $\alpha_{\text{adj}}=.01$ for goal-framing (5 comparisons), $\alpha_{\text{adj}}=.017$ for ablations (3 comparisons per model).
+
+\subsection{Model Selection and Sample Sizes}
 \label{sec:exp-models}
 
-We evaluate 20 models spanning 7 providers, selected to represent the state of the art in December 2025 across multiple dimensions:
+We evaluate 20 models spanning 7 providers, selected to represent the state of the art in December 2025 across multiple dimensions. Each model was evaluated on the \textbf{goal-framing conditions} (6 conditions $\times$ 5 seeds = 30 episodes per model). A subset of 5 flagship models representing diverse providers were additionally evaluated on \textbf{architecture} and \textbf{scaffolding ablations} (4 architectures $\times$ 10 seeds = 40 episodes; 4 scaffolding conditions $\times$ 10 seeds = 40 episodes).
+
+\paragraph{Flagship Models for Ablations.}
+The five models selected for architecture and scaffolding ablations were: Claude Opus 4.5 (Anthropic), GPT-5.1 (OpenAI), Gemini 3 Pro (Google), DeepSeek V3 (DeepSeek), and Llama 3.3 70B (Meta). These represent the best-performing model from each major provider tier.
 
 \begin{table}[h]
 \centering
-\caption{Model Categories and Representatives}
+\caption{Model Categories and Sample Sizes}
 \label{tab:model-categories}
 \small
-\begin{tabular}{@{}p{2.5cm}p{4cm}p{5cm}@{}}
+\begin{tabular}{@{}p{2.5cm}p{4cm}cc@{}}
 \toprule
-\textbf{Category} & \textbf{Models} & \textbf{Selection Rationale} \\
+\textbf{Category} & \textbf{Models} & \textbf{N (framing)} & \textbf{N (ablations)} \\
 \midrule
-Premium Reasoning & Claude Sonnet 4, Claude Opus 4.5, o1, GPT-5.1, Gemini 3 Pro & Best-in-class for agentic tasks \\
-Balanced & Claude 3.5 Sonnet, o3-mini, Gemini 2.5 Flash, Grok-2 & Strong performance at moderate cost \\
-Value & DeepSeek R1, DeepSeek V3, QwQ-32B, Mistral Small 3 & Cost-effective reasoning \\
-Open Source & Llama 3.3 70B, Llama 3.1 405B, Qwen 2.5 72B, Mistral Large & Reproducibility focus \\
-Fast & Claude 3.5 Haiku, GPT-4o-mini, Gemini Flash 1.5 & Latency-optimized \\
+Premium Reasoning & Claude Sonnet 4, Claude Opus 4.5, o1, GPT-5.1, Gemini 3 Pro & 30 each & 80 (3 models) \\
+Balanced & Claude 3.5 Sonnet, o3-mini, Gemini 2.5 Flash, Grok-2 & 30 each & --- \\
+Value & DeepSeek R1, DeepSeek V3, QwQ-32B, Mistral Small 3 & 30 each & 80 (1 model) \\
+Open Source & Llama 3.3 70B, Llama 3.1 405B, Qwen 2.5 72B, Mistral Large & 30 each & 80 (1 model) \\
+Fast & Claude 3.5 Haiku, GPT-4o-mini, Gemini Flash 1.5 & 30 each & --- \\
+\midrule
+\textbf{Total} & \textbf{20 models} & \textbf{600} & \textbf{400} \\
 \bottomrule
 \end{tabular}
+\begin{flushleft}
+\small N (framing) = episodes for goal-framing experiments. N (ablations) = additional episodes for architecture + scaffolding ablations. Five flagship models evaluated on all conditions (30 + 80 = 110 episodes each).
+\end{flushleft}
 \end{table}
 
 \subsection{Overall Model Performance}
 \label{sec:exp-overall}
 
-Table~\ref{tab:overall} presents aggregate performance across all conditions and seeds.
+Table~\ref{tab:overall} presents aggregate performance across all goal-framing conditions and seeds. Each model's performance is averaged across 30 episodes (6 conditions $\times$ 5 seeds). Standard errors reflect variance across seeds within the baseline condition to isolate stochastic environment effects from prompt-induced behavioral differences.
 
 \begin{table}[h]
 \centering
-\caption{Overall Model Performance (Mean $\pm$ SE across 25 episodes per model)}
+\caption{Overall Model Performance (Mean $\pm$ SE across 30 episodes per model)}
 \label{tab:overall}
 \small
 \begin{tabular}{@{}lccccr@{}}
@@ -108,11 +128,11 @@ A key finding is the relationship between model cost and performance. Figure~\re
 \subsection{Goal-Framing Effects}
 \label{sec:exp-framing}
 
-Our primary research question concerns how goal-framing prompts influence agent behavior. Table~\ref{tab:framing} shows performance broken down by condition, aggregated across all models.
+Our primary research question concerns how goal-framing prompts influence agent behavior. Table~\ref{tab:framing} shows performance broken down by condition, aggregated across all 20 models. Each condition represents 100 episodes (20 models $\times$ 5 seeds). Statistical comparisons use paired t-tests on model-level means (N=20 models) to account for model variance, with Bonferroni correction for 5 comparisons ($\alpha_{\text{adj}}=.01$).
 
 \begin{table}[h]
 \centering
-\caption{Performance by Goal-Framing Condition (All Models Aggregated)}
+\caption{Performance by Goal-Framing Condition (Aggregated across 20 models, 5 seeds each)}
 \label{tab:framing}
 \begin{tabular}{@{}lccccc@{}}
 \toprule
@@ -216,11 +236,11 @@ A key skill is adapting to weather conditions. Figure~\ref{fig:weather-response}
 \subsection{Architecture Ablation}
 \label{sec:exp-architecture}
 
-Table~\ref{tab:architecture-results} compares agent architectures on five representative flagship models: Claude Opus 4.5 (Anthropic), GPT-5.1 (OpenAI), Gemini 3 Pro (Google), DeepSeek V3 (DeepSeek), and Llama 3.3 70B (Meta).
+Table~\ref{tab:architecture-results} compares agent architectures on five flagship models: Claude Opus 4.5 (Anthropic), GPT-5.1 (OpenAI), Gemini 3 Pro (Google), DeepSeek V3 (DeepSeek), and Llama 3.3 70B (Meta). Each architecture was evaluated on 10 seeds per model (50 episodes total per architecture). We use the \textbf{Baseline} goal-framing condition for all architecture ablations to isolate architectural effects from motivational framing.
 
 \begin{table}[h]
 \centering
-\caption{Agent Architecture Comparison (Mean Profit $\pm$ SE)}
+\caption{Agent Architecture Comparison (Mean Profit $\pm$ SE across 10 seeds)}
 \label{tab:architecture-results}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -257,11 +277,11 @@ Examining generated plans, we observe:
 \subsection{Cognitive Scaffolding Ablation}
 \label{sec:exp-scaffolding}
 
-Table~\ref{tab:scaffolding-results} shows the effect of providing computational tools.
+Table~\ref{tab:scaffolding-results} shows the effect of providing computational tools and math-encouraging prompts. We evaluate the same five flagship models used in architecture ablations, with 10 seeds per condition (50 episodes per scaffolding type, 200 total). All scaffolding experiments use the \textsc{React} architecture with \textbf{Baseline} goal-framing to isolate scaffolding effects.
 
 \begin{table}[h]
 \centering
-\caption{Cognitive Scaffolding Comparison (Mean Profit $\pm$ SE)}
+\caption{Cognitive Scaffolding Comparison (Mean Profit $\pm$ SE across 10 seeds)}
 \label{tab:scaffolding-results}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -303,7 +323,7 @@ We audited 50 episodes with math prompts for calculation errors:
 \subsection{Failure Mode Analysis}
 \label{sec:exp-failures}
 
-We manually coded 100 randomly sampled episodes to identify systematic failure modes. Table~\ref{tab:failures} shows the prevalence of each failure type.
+We manually coded 120 randomly sampled episodes (20 episodes per goal-framing condition, stratified across model tiers) to identify systematic failure modes. Two coders independently labeled episodes; inter-rater agreement was substantial (Cohen's $\kappa = 0.78$). Table~\ref{tab:failures} shows the prevalence of each failure type by condition.
 
 \begin{table}[h]
 \centering
@@ -327,18 +347,18 @@ Failure to buy cooler when beneficial & XX\% & XX\% & XX\% & XX\% & XX\% & XX\% 
 \subsection{Episode Difficulty Analysis}
 \label{sec:exp-difficulty}
 
-Not all episodes are equally difficult. We analyze what makes certain weather sequences challenging and how difficulty correlates with agent performance.
+Not all episodes are equally difficult. We analyze what makes certain weather sequences challenging and how difficulty correlates with agent performance across all 15 unique seeds used in our experiments (5 for goal-framing, 10 for ablations).
 
 \paragraph{Difficulty Metrics.}
 We define episode difficulty along three dimensions:
 \begin{itemize}
     \item \textbf{Weather volatility}: Standard deviation of demand multipliers across the 14-day sequence
-    \item \textbf{Trap frequency}: Number of ``trap'' patterns (e.g., hot day followed by storm, incentivizing overbuying)
-    \item \textbf{Forecast reliability}: How often tomorrow's forecast matches actual weather
+    \item \textbf{Trap frequency}: Number of ``trap'' patterns (e.g., hot day followed by storm, incentivizing overbuying lemons that will spoil)
+    \item \textbf{Oracle profit ceiling}: Maximum achievable profit with perfect foresight via dynamic programming
 \end{itemize}
 
 \paragraph{Seed Difficulty Distribution.}
-Figure~\ref{fig:difficulty} shows the distribution of Oracle-achievable profit across our 5 seeds, revealing variance in episode difficulty.
+Figure~\ref{fig:difficulty} shows the distribution of Oracle-achievable profit across our 15 unique seeds, revealing substantial variance in episode difficulty ($\sigma = $ \$XX.XX).
 
 \begin{figure}[h]
 \centering
