@@ -71,13 +71,13 @@ Several limitations constrain the generalizability of our findings:
 \begin{enumerate}
     \item \textbf{Single domain}: While the lemonade stand is interpretable, it may not generalize to other business domains with different dynamics (e.g., manufacturing, services).
 
-    \item \textbf{Temperature sensitivity}: We used each model's default temperature via OpenRouter (typically $T=0.7$--$1.0$); different temperature settings may yield different framing effects or strategic variation.
-
-    \item \textbf{Prompt sensitivity}: Our specific phrasings of goal-framing conditions may not capture the full space of possible framings.
+    \item \textbf{Prompt sensitivity}: Our specific phrasings of goal-framing conditions may not capture the full space of possible framings. Different wording with equivalent semantic content may yield different behavioral responses.
 
     \item \textbf{No fine-tuning}: We evaluated base models without task-specific training; fine-tuned agents may show different patterns.
 
-    \item \textbf{API model versions}: Model behavior may change with provider updates; we report exact model versions in Appendix~\ref{app:versions}.
+    \item \textbf{API model versions}: Model behavior may change with provider updates; we report exact model versions and evaluation date in Appendix~\ref{app:versions}.
+
+    \item \textbf{Sampling determinism}: We use $T=0$ for reproducibility, which eliminates exploration of the model's uncertainty. Higher temperatures might reveal different strategic behaviors or robustness patterns, though at the cost of reproducibility.
 \end{enumerate}
 
 \subsection{Future Work}

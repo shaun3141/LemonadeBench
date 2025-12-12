@@ -43,17 +43,17 @@ class VLLMProvider(LLMProvider):
         self,
         base_url: str | None = None,
         model: str | None = None,
-        temperature: float = 0.7,
+        temperature: float = 0.0,
         max_tokens: int = 2048,
         timeout: int = 120,
     ):
         """
         Initialize the vLLM provider.
-        
+
         Args:
             base_url: vLLM server URL (default: http://localhost:8000/v1)
             model: Model identifier (auto-detected if None)
-            temperature: Sampling temperature for generation
+            temperature: Sampling temperature (default: 0.0 for greedy decoding)
             max_tokens: Maximum tokens to generate
             timeout: Request timeout in seconds
         """

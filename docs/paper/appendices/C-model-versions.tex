@@ -95,16 +95,16 @@ qwen-2.5-72b & \checkmark & 128K & Standard & --- \\
 
 \subsection{API Configuration}
 
-All models were accessed via OpenRouter's unified API:
+All models were accessed via OpenRouter's unified API with the following settings:
 \begin{itemize}
     \item \textbf{Base URL}: \texttt{https://openrouter.ai/api/v1}
     \item \textbf{Max tokens}: 1024 per response
-    \item \textbf{Temperature}: Default (model-specific, typically $T=0.7$--$1.0$)
+    \item \textbf{Temperature}: 0 (greedy decoding)
+    \item \textbf{Top-p}: 1.0
     \item \textbf{Tool choice}: Required (forced function calling)
-    \item \textbf{Top-p}: Default (1.0 for most models)
 \end{itemize}
 
-This configuration ensures natural strategic variation while maintaining reproducibility through deterministic environment seeding. We do not force greedy decoding ($T=0$) as this can produce unnaturally rigid behavior in multi-turn decision tasks.
+Greedy decoding ($T=0$) ensures full reproducibility and isolates the effects of goal-framing prompts from sampling stochasticity. Given the same environment seed and goal-framing condition, a model produces identical behavior across runs. Environmental variance across the 5--10 random seeds provides sufficient stochastic variation for statistical analysis, making sampling variance unnecessary and scientifically undesirable.
 
 \subsection{Cost Analysis}
 

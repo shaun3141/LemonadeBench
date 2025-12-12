@@ -359,6 +359,7 @@ class OpenRouterProvider(LLMProvider):
                 response = self._client.chat.completions.create(
                     model=self._model,
                     max_tokens=self._max_tokens,
+                    temperature=0.0,  # Greedy decoding for reproducibility
                     messages=openai_messages,
                     tools=openai_tools,
                     tool_choice=tool_choice,
@@ -452,6 +453,7 @@ class OpenRouterProvider(LLMProvider):
                 response = self._client.chat.completions.create(
                     model=self._model,
                     max_tokens=self._max_tokens,
+                    temperature=0.0,  # Greedy decoding for reproducibility
                     messages=openai_messages,
                 )
                 break

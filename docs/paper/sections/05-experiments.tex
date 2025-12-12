@@ -10,7 +10,7 @@ We conducted 1,000 total episodes using a stratified experimental design: (1) \t
 Goal-framing experiments use seeds \{1, 42, 100, 7, 2025\}; architecture and scaffolding ablations use seeds \{1, 5, 10, 15, 20, 25, 30, 35, 40, 50\} to increase statistical power. Each seed generates a unique 14-day weather sequence, ensuring reproducibility while testing generalization across environmental conditions. Seeds were selected pseudo-randomly before experiments began.
 
 \paragraph{Temperature and Sampling.}
-All models use their default temperature settings via OpenRouter (typically $T=0.7$--$1.0$ depending on model). We do not force deterministic decoding ($T=0$) to allow natural strategic variation within the same environmental conditions.
+All models use greedy decoding ($T=0$) to ensure full reproducibility and isolate the effects of goal-framing from sampling stochasticity. Environmental variance is introduced through deterministic seeding (5 unique weather sequences for goal-framing experiments, 10 for ablations), which provides sufficient stochastic variation for statistical analysis while maintaining perfect reproducibility within each seed.
 
 \paragraph{Statistical Analysis.}
 For goal-framing comparisons, we use paired t-tests comparing each condition to Baseline on model-level aggregates (N=20 models), accounting for model-to-model variance. For architecture and scaffolding ablations, we use paired t-tests on seed-level results (N=10 seeds) within each model, then report average effect sizes. All tests apply Bonferroni correction: $\alpha_{\text{adj}}=.01$ for goal-framing (5 comparisons), $\alpha_{\text{adj}}=.017$ for ablations (3 comparisons per model).

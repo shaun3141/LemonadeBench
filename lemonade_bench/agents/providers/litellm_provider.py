@@ -248,20 +248,21 @@ class LiteLLMProvider(LLMProvider):
             "max_tokens": self._max_tokens,
             "timeout": self._timeout,
             "num_retries": self._num_retries,
+            "temperature": 0.0,  # Greedy decoding for reproducibility (overridden for Gemini 3)
         }
-        
+
         # Add tools if provided
         if tools:
             kwargs["tools"] = tools
             if tool_choice:
                 kwargs["tool_choice"] = tool_choice
-        
+
         # Gemini 3 specific settings
         if self._is_gemini_3():
             # BEST PRACTICE: Use default temperature=1.0 for Gemini 3
             # Lowering temperature leads to suboptimal performance
             kwargs["temperature"] = 1.0
-            
+
             # Enable thought signatures with reasoning_effort
             if self._reasoning_effort:
                 kwargs["reasoning_effort"] = self._reasoning_effort
