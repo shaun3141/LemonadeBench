@@ -1,28 +1,108 @@
 \section{Sample Agent Reasoning}
 \label{app:reasoning}
 
-Below are representative examples of agent reasoning across different conditions and models.
+Below are representative examples of agent reasoning extracted from actual evaluation runs. These examples illustrate how agents adapt to weather conditions, manage perishable inventory, make strategic investments, and respond to different goal-framing conditions.
 
-\subsection{Example: Weather Adaptation}
-\textbf{Condition}: \textsc{Baseline} | \textbf{Model}: Claude 3.5 Sonnet | \textbf{Day}: 5 | \textbf{Weather}: Hot (98°F)
+\subsection{Example: Weather-Based Pricing Adaptation}
+\textbf{Condition}: \textsc{Baseline} | \textbf{Model}: Claude Sonnet 4 | \textbf{Day}: 10 | \textbf{Weather}: Hot (102\textdegree F)
 
-\begin{quote}
-\small\ttfamily
-[PLACEHOLDER: Insert actual agent reasoning from a hot day showing price adjustment]
-\end{quote}
-
-\subsection{Example: Risk-Taking Under Competition}
-\textbf{Condition}: \textsc{Competitive} | \textbf{Model}: GPT-5.1 | \textbf{Day}: 10 | \textbf{Weather}: Cloudy
+\textbf{Context}: Extremely hot day with cloudy weather forecast for tomorrow.
 
 \begin{quote}
 \small\ttfamily
-[PLACEHOLDER: Insert actual agent reasoning showing competitive risk behavior]
+``Extremely hot day (102\textdegree F) - perfect for maximum pricing! Need sugar and more supplies urgently. Tomorrow is cloudy so demand will drop. Setting premium price at \$1.00 to capitalize on the scorching heat when customers desperately want cold lemonade.''
 \end{quote}
 
-\subsection{Example: Conservative Inventory Management}
-\textbf{Condition}: \textsc{Survival} | \textbf{Model}: Gemini 3 Pro | \textbf{Day}: 3 | \textbf{Weather}: Rainy
+\textbf{Action}: price\_per\_cup=100, buy\_sugar=4, buy\_cups=40, buy\_ice=12
+
+\textbf{Outcome}: Sold 40 cups, daily profit: \$15.30. This was the most profitable day of the episode, demonstrating successful weather exploitation.
+
+\subsection{Example: Perishable Inventory Management}
+\textbf{Condition}: \textsc{Baseline} | \textbf{Model}: Claude Sonnet 4 | \textbf{Day}: 8 | \textbf{Weather}: Sunny (77\textdegree F)
+
+\textbf{Context}: Agent has 13.75 lemons expiring tomorrow and is nearly out of sugar.
 
 \begin{quote}
 \small\ttfamily
-[PLACEHOLDER: Insert actual agent reasoning showing conservative purchasing]
+``Have 13.75 lemons expiring tomorrow so must use them today! Need sugar urgently. Sunny weather allows good pricing at \$0.75. Tomorrow is also sunny so buying extra supplies to avoid waste and prepare for continued good weather.''
 \end{quote}
+
+\textbf{Action}: price\_per\_cup=75, buy\_sugar=4, buy\_cups=30, buy\_ice=8
+
+\textbf{Outcome}: Sold 40 cups, daily profit: \$11.20. Successfully used expiring inventory, though 3.75 lemons still spoiled due to capacity constraints.
+
+\subsection{Example: Strategic Upgrade Investment}
+\textbf{Condition}: \textsc{Baseline} | \textbf{Model}: Claude Sonnet 4 | \textbf{Day}: 4 | \textbf{Weather}: Sunny (75\textdegree F)
+
+\textbf{Context}: Agent has observed significant ice melt losses over previous days.
+
+\begin{quote}
+\small\ttfamily
+``Ice melt is killing profits - need cooler upgrade today! Have 4 lemons expiring tomorrow so must use them. Sunny but cooler today, then cloudy tomorrow, so buying moderate supplies. Getting cooler will save money long-term on ice.''
+\end{quote}
+
+\textbf{Action}: price\_per\_cup=70, buy\_lemons=8, buy\_sugar=3, buy\_cups=40, buy\_ice=8, buy\_upgrade=``cooler''
+
+\textbf{Outcome}: Daily profit: \$-6.80 (due to upgrade cost), but subsequent days showed reduced ice melt (50\% instead of 100\%), validating the investment decision.
+
+\subsection{Example: Conservative Bad-Weather Strategy}
+\textbf{Condition}: \textsc{Baseline} | \textbf{Model}: Claude Sonnet 4 | \textbf{Day}: 6 | \textbf{Weather}: Rainy (55\textdegree F)
+
+\textbf{Context}: Rainy day with hot weather forecast for tomorrow.
+
+\begin{quote}
+\small\ttfamily
+``Rainy day with very low demand, but tomorrow is hot so need to prepare. Buying minimal supplies for today's rain but stocking up lemons for tomorrow's hot weather. Lowering price to \$0.35 to attract the few customers who brave the rain.''
+\end{quote}
+
+\textbf{Action}: price\_per\_cup=35, buy\_lemons=24, buy\_ice=8
+
+\textbf{Outcome}: Sold 11 cups, daily profit: \$-3.35. Low sales as expected, but inventory positioned well for the following hot day which earned \$8.25.
+
+\subsection{Example: End-of-Season Optimization}
+\textbf{Condition}: \textsc{Baseline} | \textbf{Model}: Claude Sonnet 4 | \textbf{Day}: 13 | \textbf{Weather}: Rainy (58\textdegree F)
+
+\textbf{Context}: Second-to-last day with rainy weather and 1 day remaining.
+
+\begin{quote}
+\small\ttfamily
+``Rainy day with only 1 day left in season. Have minimal inventory and tomorrow is also rainy. Setting low price at \$0.40 to move remaining inventory and serve the few customers who brave the rain. No point buying much since season ends tomorrow.''
+\end{quote}
+
+\textbf{Action}: price\_per\_cup=40, buy\_sugar=1, buy\_ice=2
+
+\textbf{Outcome}: Sold 4 cups, daily profit: \$0.60. Agent correctly minimized end-of-season inventory purchases to avoid waste.
+
+\subsection{Example: First-Day Exploration}
+\textbf{Condition}: \textsc{Baseline} | \textbf{Model}: Claude Sonnet 4 | \textbf{Day}: 1 | \textbf{Weather}: Cloudy (65\textdegree F)
+
+\textbf{Context}: Opening day with sunny forecast for tomorrow.
+
+\begin{quote}
+\small\ttfamily
+``Starting conservatively on cloudy day with modest price. Have good starting inventory, so focusing on building reputation and testing demand. Tomorrow is sunny so will reassess pricing strategy.''
+\end{quote}
+
+\textbf{Action}: price\_per\_cup=50
+
+\textbf{Outcome}: Sold 40 cups, daily profit: \$20.00 (no supply costs since using starting inventory). Strong opening that established positive momentum.
+
+\subsection{Common Reasoning Patterns}
+
+Analysis of agent reasoning across multiple runs reveals consistent patterns:
+
+\paragraph{Weather-Responsive Pricing.}
+Agents consistently adjust prices based on weather: premium pricing (\$0.75--\$1.00) on hot/sunny days, moderate pricing (\$0.50--\$0.70) on cloudy days, and discounted pricing (\$0.35--\$0.50) on rainy/stormy days.
+
+\paragraph{Forecast-Driven Purchasing.}
+Agents frequently reference tomorrow's forecast when making inventory decisions, buying ahead for anticipated good weather and minimizing purchases before expected bad weather.
+
+\paragraph{Expiration Awareness.}
+Most agents explicitly mention expiring inventory in their reasoning, adjusting prices or production to use perishables before they spoil.
+
+\paragraph{Cumulative Learning.}
+Agents often reference previous day's outcomes (``Ice melt is killing profits'', ``Turned away customers yesterday'') to justify strategy changes.
+
+\paragraph{Multi-Objective Balancing.}
+Reasoning frequently balances competing objectives: short-term profit vs. reputation building, immediate sales vs. preparation for future weather.
+

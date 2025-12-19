@@ -3,6 +3,11 @@
 
 name: "DeepSeek Chat Test Run"
 
+# Required: Benchmark taxonomy version
+# v1 = Original benchmark (before Dec 2025)
+# v2 = Fixed pricing display, improved context formatting (Dec 2025+)
+taxonomy_version: 2
+
 models:
   - provider: openrouter
     name: deepseek/deepseek-chat

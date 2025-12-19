@@ -28,3 +28,5 @@ CREATE POLICY "Deny public insert on turns"
 
 -- Note: DELETE is not allowed by default since there's no policy for it
 
+
+

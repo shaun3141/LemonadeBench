@@ -14,7 +14,13 @@
 #
 # Run with: lemonade batch examples/configs/paper_methodology_single_model.yaml --parallel 4
 
-name: "Paper Methodology - Single Model Test (Claude Opus 4.5)"
+name: "Paper Methodology - Single Model Test (Claude Haiku 4.5)"
+
+# Required: Benchmark taxonomy version
+# v1 = Original benchmark (before Dec 2025)
+# v2 = Fixed pricing display, improved context formatting (Dec 2025+)
+# v3 = Fixed scaffolding issues (force take_action, increased max_tokens)
+taxonomy_version: 3
 
 # =============================================================================
 # STUDY 1: GOAL-FRAMING EXPERIMENT (Single Model)
@@ -23,7 +29,7 @@ experiment:
   provider: openrouter  # Use OpenRouter for consistent API access
   
   models:
-    - anthropic/claude-opus-4.5
+    - anthropic/claude-haiku-4.5
   
   seeds: [1, 42, 100, 7, 2025]
   
@@ -45,7 +51,7 @@ architecture_ablation:
   provider: openrouter
   
   models:
-    - anthropic/claude-opus-4.5
+    - anthropic/claude-haiku-4.5
   
   seeds: [1, 42, 100, 7, 2025]
   
@@ -65,7 +71,7 @@ scaffolding_ablation:
   provider: openrouter
   
   models:
-    - anthropic/claude-opus-4.5
+    - anthropic/claude-haiku-4.5
   
   seeds: [1, 42, 100, 7, 2025]
   

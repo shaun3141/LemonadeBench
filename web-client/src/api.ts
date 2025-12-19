@@ -144,6 +144,69 @@ export async function getRunTurns(runId: string): Promise<RunTurn[]> {
   return supabaseQuery<RunTurn[]>(`turns?run_id=eq.${runId}&order=day.asc`);
 }
 
+// Get all runs including failed/incomplete ones (for data explorer)
+// Uses pagination to overcome Supabase's 1000 row default limit
+export async function getAllRunsIncludingFailed(): Promise<LeaderboardRun[]> {
+  const pageSize = 1000;
+  let allRuns: LeaderboardRun[] = [];
+  let offset = 0;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const query = `runs?select=*,models(name,provider)&order=started_at.desc&limit=${pageSize}&offset=${offset}`;
+    
+    const runs = await supabaseQuery<Array<{
+      id: string;
+      model_id: string;
+      seed: number | null;
+      goal_framing: GoalFraming;
+      architecture: Architecture;
+      scaffolding: Scaffolding;
+      taxonomy_version: number | null;
+      total_profit: number;
+      total_cups_sold: number;
+      final_cash: number;
+      final_reputation: number;
+      turn_count: number;
+      error_count: number;
+      error_message: string | null;
+      started_at: string;
+      completed_at: string | null;
+      models: { name: string; provider: string } | null;
+    }>>(query);
+    
+    // Transform to LeaderboardRun format
+    const transformed = runs.map(run => ({
+      run_id: run.id,
+      model_id: run.model_id,
+      model_name: run.models?.name || 'Unknown',
+      provider: run.models?.provider || 'unknown',
+      seed: run.seed,
+      goal_framing: run.goal_framing || 'baseline',
+      architecture: run.architecture || 'react',
+      scaffolding: run.scaffolding || 'none',
+      taxonomy_version: run.taxonomy_version || 1,
+      total_profit: run.total_profit || 0,
+      total_cups_sold: run.total_cups_sold || 0,
+      final_cash: run.final_cash || 0,
+      final_reputation: run.final_reputation || 0,
+      turn_count: run.turn_count || 0,
+      error_count: run.error_count || 0,
+      error_message: run.error_message,
+      started_at: run.started_at,
+      completed_at: run.completed_at,
+    }));
+    
+    allRuns = allRuns.concat(transformed);
+    
+    // Check if we got a full page (meaning there might be more)
+    hasMore = runs.length === pageSize;
+    offset += pageSize;
+  }
+  
+  return allRuns;
+}
+
 // Aggregated results for charts
 export interface AggregatedResult {
   condition: string;

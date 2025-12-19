@@ -234,17 +234,33 @@ class HarnessConfig:
     
     Attributes:
         name: Human-readable name for this batch
+        taxonomy_version: Required benchmark taxonomy version (1=original, 2=fixed pricing/context Dec 2025)
         models: List of model configurations to evaluate
         experiment: Optional experimental matrix configuration
         logging: Logging configuration
     """
     name: str
+    taxonomy_version: int
     models: list[ModelConfig]
     experiment: ExperimentConfig | None = None
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "HarnessConfig":
+        # Validate taxonomy_version is present and valid
+        if "taxonomy_version" not in data:
+            raise ValueError(
+                "taxonomy_version is required in config. "
+                "Add 'taxonomy_version: 2' to your config file. "
+                "Version 1 = original benchmark, Version 2 = fixed pricing/context (Dec 2025)"
+            )
+        
+        taxonomy_version = data["taxonomy_version"]
+        if not isinstance(taxonomy_version, int) or taxonomy_version < 1:
+            raise ValueError(
+                f"taxonomy_version must be a positive integer, got: {taxonomy_version}"
+            )
+        
         # Check if using experiment matrix or direct models
         experiment = None
         models = []
@@ -271,6 +287,7 @@ class HarnessConfig:
         
         return cls(
             name=data.get("name", "Unnamed Batch"),
+            taxonomy_version=taxonomy_version,
             models=models,
             experiment=experiment,
             logging=LoggingConfig.from_dict(data.get("logging")),
@@ -356,6 +373,7 @@ def save_config(config: HarnessConfig, path: str | Path) -> None:
     
     data: dict[str, Any] = {
         "name": config.name,
+        "taxonomy_version": config.taxonomy_version,
     }
     
     # If this was created from an experiment matrix, save that instead
@@ -395,6 +413,11 @@ def save_config(config: HarnessConfig, path: str | Path) -> None:
 # Example config template
 EXAMPLE_CONFIG = """# LemonadeBench Batch Configuration
 name: "Model Comparison Run"
+
+# Required: Benchmark taxonomy version
+# v1 = Original benchmark (before Dec 2025)
+# v2 = Fixed pricing display, improved context formatting (Dec 2025+)
+taxonomy_version: 2
 
 models:
   # Anthropic Claude models
@@ -466,6 +489,11 @@ EXAMPLE_EXPERIMENT_CONFIG = """# LemonadeBench Experimental Matrix Configuration
 # Use this for systematic ablation studies
 
 name: "Goal Framing Ablation Study"
+
+# Required: Benchmark taxonomy version
+# v1 = Original benchmark (before Dec 2025)
+# v2 = Fixed pricing display, improved context formatting (Dec 2025+)
+taxonomy_version: 2
 
 # Experimental matrix - generates all combinations
 experiment:

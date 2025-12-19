@@ -43,6 +43,7 @@ class RunConfig:
     architecture: ArchitectureType = "react"  # Agent architecture
     goal_framing: GoalFramingType = "baseline"  # Goal framing condition
     math_prompt: bool = False  # Enable math encouragement scaffolding
+    taxonomy_version: int = 2  # Benchmark taxonomy version (1=original, 2=Dec 2025 fixes)
 
 
 def observation_to_dict(obs: LemonadeObservation) -> dict:
@@ -204,6 +205,7 @@ class RunLogger:
                 goal_framing=config.get("goal_framing", "baseline"),
                 architecture=config.get("architecture", "react"),
                 scaffolding=scaffolding,
+                taxonomy_version=config.get("taxonomy_version", 2),
             )
     
     def log_turn(
@@ -341,6 +343,28 @@ class RunLogger:
         
         return metrics
     
+    def save_failure(self, error_message: str) -> None:
+        """
+        Save a run failure to the database.
+        
+        Called when the run throws an exception before completion.
+        
+        Args:
+            error_message: Error message describing the failure
+        """
+        # Save error to local file
+        error_file = self.run_dir / "error.txt"
+        with open(error_file, "w") as f:
+            f.write(error_message)
+        
+        # Mark run as failed in Supabase
+        if self.supabase_logger and self.supabase_run_id:
+            self.supabase_logger.fail_run(
+                run_id=self.supabase_run_id,
+                error_message=error_message,
+                turn_count=len(self.turns),
+            )
+    
     def _save_conversation(self, messages: list[dict]):
         """Save the conversation history."""
         conv_file = self.run_dir / "conversation.json"
@@ -419,6 +443,7 @@ class Runner:
             goal_framing=config.goal_framing,
             architecture=config.architecture,
             scaffolding=self._get_scaffolding(config),
+            taxonomy_version=config.taxonomy_version,
             completed_only=completed_only,
         )
     
@@ -466,21 +491,25 @@ class Runner:
     
     def _create_provider(self, config: RunConfig):
         """Create an LLM provider from config."""
+        # Use generous max_tokens to prevent truncation
+        # 4096 provides headroom for complex reasoning + tool calls
+        max_tokens = 4096
+        
         if config.provider == "anthropic":
             from ..agents.providers import AnthropicProvider
-            return AnthropicProvider(model=config.model)
+            return AnthropicProvider(model=config.model, max_tokens=max_tokens)
         elif config.provider == "openai":
             from ..agents.providers.openai import OpenAIProvider
-            return OpenAIProvider(model=config.model)
+            return OpenAIProvider(model=config.model, max_tokens=max_tokens)
         elif config.provider == "openrouter":
             from ..agents.providers.openrouter import OpenRouterProvider
             # Skip validation here since we do it in preflight
-            return OpenRouterProvider(model=config.model, validate_model=False)
+            return OpenRouterProvider(model=config.model, validate_model=False, max_tokens=max_tokens)
         elif config.provider == "litellm":
             from ..agents.providers.litellm_provider import LiteLLMProvider
             # For Gemini 3 models, enable reasoning_effort for thought signatures
             reasoning_effort = "low" if "gemini-3" in config.model else None
-            return LiteLLMProvider(model=config.model, reasoning_effort=reasoning_effort)
+            return LiteLLMProvider(model=config.model, reasoning_effort=reasoning_effort, max_tokens=max_tokens)
         else:
             raise ValueError(f"Unknown provider: {config.provider}. Supported: anthropic, openai, openrouter, litellm")
     
@@ -537,15 +566,21 @@ class Runner:
             "architecture": config.architecture,
             "goal_framing": config.goal_framing,
             "math_prompt": config.math_prompt,
+            "taxonomy_version": config.taxonomy_version,
         })
         
-        # Run episode
-        result = agent.run_episode(env, callbacks=callbacks)
-        
-        # Save results with metrics
-        metrics = logger.save_episode_result(result, run_config=config)
-        
-        return result, metrics
+        try:
+            # Run episode
+            result = agent.run_episode(env, callbacks=callbacks)
+            
+            # Save results with metrics
+            metrics = logger.save_episode_result(result, run_config=config)
+            
+            return result, metrics
+        except Exception as e:
+            # Log the failure to database before re-raising
+            logger.save_failure(str(e))
+            raise
     
     def run_batch(self, config) -> list[tuple[EpisodeResult, DiagnosticMetrics]]:
         """
@@ -573,6 +608,7 @@ class Runner:
                     architecture=model.architecture,
                     goal_framing=model.goal_framing,
                     math_prompt=model.math_prompt,
+                    taxonomy_version=config.taxonomy_version,
                 ))
         
         # Deduplicate configs within the batch first (before DB check)
@@ -582,7 +618,7 @@ class Runner:
         duplicate_count = 0
         
         for rc in all_run_configs:
-            # Create a hashable key for this config
+            # Create a hashable key for this config (includes taxonomy_version)
             config_key = (
                 rc.provider,
                 rc.model,
@@ -590,6 +626,7 @@ class Runner:
                 rc.goal_framing,
                 rc.architecture,
                 self._get_scaffolding(rc),  # Normalize tools/math_prompt to scaffolding type
+                rc.taxonomy_version,
             )
             
             if config_key in seen_configs:
@@ -618,8 +655,14 @@ class Runner:
         if self.skip_existing and self._supabase_logger:
             console.print("[dim]Checking for existing runs...[/dim]")
             
-            # Batch fetch all existing runs in one query (much faster than individual checks)
-            existing_runs = self._supabase_logger.get_all_existing_runs(completed_only=False)
+            # Get the taxonomy version from the first config (all should have the same version)
+            batch_taxonomy_version = deduplicated_configs[0].taxonomy_version if deduplicated_configs else 2
+            
+            # Batch fetch existing runs for this taxonomy version (much faster than individual checks)
+            existing_runs = self._supabase_logger.get_all_existing_runs(
+                completed_only=False,
+                taxonomy_version=batch_taxonomy_version,
+            )
             existing_set = {
                 (r["model_name"], r["seed"], r["goal_framing"], r["architecture"], r["scaffolding"])
                 for r in existing_runs

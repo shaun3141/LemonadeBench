@@ -90,3 +90,5 @@ WHERE r.completed_at IS NOT NULL;
 
 GRANT SELECT ON runs_with_model TO anon, authenticated;
 
+
+

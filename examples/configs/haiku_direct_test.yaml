@@ -1,6 +1,9 @@
 # Claude Haiku direct API test
 name: "Context Optimization Test - Claude Haiku Direct"
 
+# Required: Benchmark taxonomy version
+taxonomy_version: 2
+
 models:
   - provider: anthropic
     name: claude-3-5-haiku-latest

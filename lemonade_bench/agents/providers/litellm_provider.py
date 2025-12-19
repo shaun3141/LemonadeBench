@@ -131,7 +131,7 @@ class LiteLLMProvider(LLMProvider):
         self,
         model: str = "gemini/gemini-3-pro-preview",
         api_key: str | None = None,
-        max_tokens: int = 1024,
+        max_tokens: int = 4096,
         reasoning_effort: str | None = None,
         timeout: int = DEFAULT_TIMEOUT,
         num_retries: int = DEFAULT_NUM_RETRIES,
@@ -329,13 +329,24 @@ class LiteLLMProvider(LLMProvider):
         response = completion(**request_kwargs)
         
         # Extract tool call
-        message = response.choices[0].message
+        choice = response.choices[0]
+        message = choice.message
         text_content = message.content
+        finish_reason = choice.finish_reason
+        
+        # Check for truncation - if response hit max_tokens, tool call may be malformed
+        if finish_reason == "length":
+            raise ValueError(
+                f"Response truncated (finish_reason=length) for model {self._model}. "
+                f"The model ran out of tokens before completing its response. "
+                f"Consider increasing max_tokens. Partial content: {text_content[:200] if text_content else 'None'}..."
+            )
         
         if not message.tool_calls:
             raise ValueError(
                 f"No tool call found in LiteLLM response for model {self._model}. "
                 f"Response content: {text_content[:200] if text_content else 'None'}... "
+                f"finish_reason: {finish_reason}. "
                 "The model may not support function calling or the prompt needs adjustment."
             )
         
@@ -343,23 +354,32 @@ class LiteLLMProvider(LLMProvider):
         
         # Parse arguments
         args_str = tool_call.function.arguments
-        try:
-            tool_input = json.loads(args_str)
-        except json.JSONDecodeError:
-            import ast
-            import re
+        
+        # Handle None/empty arguments - this usually indicates a malformed response
+        if args_str is None or args_str == "":
+            raise ValueError(
+                f"Tool call '{tool_call.function.name}' has empty arguments for model {self._model}. "
+                f"This may indicate response truncation or a model issue. "
+                f"finish_reason: {finish_reason}, content: {text_content[:100] if text_content else 'None'}..."
+            )
+        else:
             try:
-                converted = args_str.replace(': null', ': None')
-                converted = converted.replace(':null', ':None')
-                converted = re.sub(r'\bnull\b', 'None', converted)
-                converted = re.sub(r'\btrue\b', 'True', converted)
-                converted = re.sub(r'\bfalse\b', 'False', converted)
-                tool_input = ast.literal_eval(converted)
-            except (ValueError, SyntaxError) as e:
-                raise ValueError(
-                    f"Failed to parse tool arguments for model {self._model}: "
-                    f"{args_str[:200]}... Error: {e}"
-                )
+                tool_input = json.loads(args_str)
+            except json.JSONDecodeError:
+                import ast
+                import re
+                try:
+                    converted = args_str.replace(': null', ': None')
+                    converted = converted.replace(':null', ':None')
+                    converted = re.sub(r'\bnull\b', 'None', converted)
+                    converted = re.sub(r'\btrue\b', 'True', converted)
+                    converted = re.sub(r'\bfalse\b', 'False', converted)
+                    tool_input = ast.literal_eval(converted)
+                except (ValueError, SyntaxError) as e:
+                    raise ValueError(
+                        f"Failed to parse tool arguments for model {self._model}: "
+                        f"{args_str[:200]}... Error: {e}"
+                    )
         
         # Extract usage
         usage = None

@@ -185,3 +185,5 @@ class TestToolIntegration:
         assert "description" in calc_def
         assert "input_schema" in calc_def
 
+
+

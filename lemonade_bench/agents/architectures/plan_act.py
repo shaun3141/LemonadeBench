@@ -14,6 +14,7 @@ from ...models import LemonadeAction, LemonadeObservation
 from ..base import EpisodeResult, TurnResult, AgentCallback
 from ..prompts import PLANNING_PROMPT, GoalFramingType
 from .react import ReactAgent, format_observation, format_action_result, parse_tool_input
+from ..providers.base import LEMONADE_ACTION_TOOL
 
 
 class PlanActAgent(ReactAgent):
@@ -127,7 +128,13 @@ Use the take_action tool to submit your decisions for today."""
                     f"Agent exceeded maximum tool calls per turn ({self.MAX_TOOL_CALLS_PER_TURN})"
                 )
             
-            response = self._generate_response()
+            # After 5 optional tool calls, force the model to use take_action
+            force_action = self._tool_calls_this_turn > 5 and self._tool_instances
+            
+            if force_action:
+                response = self._generate_response(tools=[LEMONADE_ACTION_TOOL])
+            else:
+                response = self._generate_response()
             self.messages.append(self.provider.format_assistant_message(response))
             
             if response.tool_name == "take_action":
@@ -232,4 +239,6 @@ Use the take_action tool to submit your decisions for today."""
             cb.on_episode_end(result)
         
         return result
+
+
 

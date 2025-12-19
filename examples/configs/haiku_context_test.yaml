@@ -3,6 +3,9 @@
 
 name: "Context Optimization Test - Claude Haiku"
 
+# Required: Benchmark taxonomy version
+taxonomy_version: 2
+
 models:
   - provider: openrouter
     name: anthropic/claude-3.5-haiku
@@ -16,4 +19,6 @@ logging:
   local: true
   supabase: false
   dir: ./runs/context_test
+
+
 

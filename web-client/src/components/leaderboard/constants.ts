@@ -23,6 +23,7 @@ export const MODEL_TIERS = {
     textColor: 'text-[#5D4037]',
     description: '$1-15/M tokens',
     models: [
+      { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5', provider: 'Anthropic' },
       { id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'Anthropic' },
       { id: 'anthropic/claude-opus-4.5', name: 'Claude Opus 4.5', provider: 'Anthropic' },
       { id: 'openai/o1', name: 'o1', provider: 'OpenAI' },
@@ -210,4 +211,6 @@ export const SCAFFOLDINGS = [
     description: 'Python code execution for complex analysis',
   },
 ];
+
+
 

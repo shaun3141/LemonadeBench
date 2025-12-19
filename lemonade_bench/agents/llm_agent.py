@@ -185,7 +185,14 @@ class LLMAgent(LemonadeAgent):
         # Update system prompt if tools are available
         if self._tool_instances:
             tool_names = list(self._tool_instances.keys())
-            tools_section = f"\n\n## Available Tools\nYou have access to the following optional tools: {', '.join(tool_names)}.\nUse them when helpful for calculations or analysis before making your final action."
+            tools_section = f"""
+
+## Available Tools
+You have access to the following optional tools: {', '.join(tool_names)}.
+
+**IMPORTANT**: These tools are OPTIONAL helpers. You may call them 0-3 times for calculations if needed.
+After any optional tool use, you MUST call `take_action` to submit your daily decisions.
+The game will not progress until you call `take_action`."""
             self.system_prompt = self.system_prompt + tools_section
     
     def reset(self) -> None:
@@ -235,13 +242,26 @@ class LLMAgent(LemonadeAgent):
                     f"Agent exceeded maximum tool calls per turn ({self.MAX_TOOL_CALLS_PER_TURN})"
                 )
             
-            # Get response from LLM with all available tools
-            response = self.provider.generate_with_tools(
-                messages=self.messages,
-                system_prompt=self.system_prompt,
-                tools=self._tool_definitions,
-                required_tool=None,  # Let model choose
-            )
+            # After 5 optional tool calls, force the model to use take_action
+            # This prevents models from looping infinitely on helper tools
+            force_action = self._tool_calls_this_turn > 5 and self._tool_instances
+            
+            if force_action:
+                # Force take_action by only providing that tool
+                response = self.provider.generate_with_tools(
+                    messages=self.messages,
+                    system_prompt=self.system_prompt,
+                    tools=[LEMONADE_ACTION_TOOL],
+                    required_tool="take_action",
+                )
+            else:
+                # Get response from LLM with all available tools
+                response = self.provider.generate_with_tools(
+                    messages=self.messages,
+                    system_prompt=self.system_prompt,
+                    tools=self._tool_definitions,
+                    required_tool=None,  # Let model choose
+                )
             
             # Track tokens
             if response.usage:

@@ -104,3 +104,5 @@ ORDER BY r.model_id, r.total_profit DESC;
 -- Grant access to the view
 GRANT SELECT ON best_runs_per_model TO anon, authenticated;
 
+
+

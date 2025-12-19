@@ -242,7 +242,14 @@ def build_system_prompt(
     
     # Add tools section if tools are available
     if tools_available:
-        tools_section = f"\n\n## Available Tools\nYou have access to the following optional tools: {', '.join(tools_available)}.\nUse them when helpful for calculations or analysis before making your final action."
+        tools_section = f"""
+
+## Available Tools
+You have access to the following optional tools: {', '.join(tools_available)}.
+
+**IMPORTANT**: These tools are OPTIONAL helpers. You may call them 0-3 times for calculations if needed.
+After any optional tool use, you MUST call `take_action` to submit your daily decisions.
+The game will not progress until you call `take_action`."""
         prompt = prompt + tools_section
     
     return prompt

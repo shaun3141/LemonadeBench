@@ -134,3 +134,5 @@ export function isHotWeather(weather: string): boolean {
   return weather === 'hot' || weather === 'sunny';
 }
 
+
+

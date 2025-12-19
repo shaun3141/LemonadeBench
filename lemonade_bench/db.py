@@ -90,6 +90,7 @@ class SupabaseLogger:
         goal_framing: str = "baseline",
         architecture: str = "react",
         scaffolding: str = "none",
+        taxonomy_version: int = 2,
     ) -> str:
         """
         Create a new run record.
@@ -102,6 +103,7 @@ class SupabaseLogger:
                          competitive, survival, growth)
             architecture: Agent architecture (react, plan_act, act_reflect, full)
             scaffolding: Cognitive scaffolding (none, calculator, math_prompt, code_interpreter)
+            taxonomy_version: Benchmark taxonomy version (1=original, 2=fixed pricing/context Dec 2025)
 
         Returns:
             Run UUID
@@ -114,6 +116,7 @@ class SupabaseLogger:
             "goal_framing": goal_framing,
             "architecture": architecture,
             "scaffolding": scaffolding,
+            "taxonomy_version": taxonomy_version,
             "total_profit": 0,
             "total_cups_sold": 0,
             "final_cash": 0,
@@ -153,6 +156,30 @@ class SupabaseLogger:
             "final_reputation": final_reputation,
             "turn_count": turn_count,
             "error_count": error_count,
+            "completed_at": datetime.utcnow().isoformat(),
+        }).eq("id", run_id).execute()
+
+    def fail_run(
+        self,
+        run_id: str,
+        error_message: str,
+        turn_count: int = 0,
+    ) -> None:
+        """
+        Mark a run as failed with an error message.
+
+        Args:
+            run_id: UUID of the run to update
+            error_message: Error message describing the failure
+            turn_count: Number of turns completed before failure
+        """
+        # Truncate very long error messages
+        if len(error_message) > 1000:
+            error_message = error_message[:997] + "..."
+        
+        self.client.table("runs").update({
+            "error_message": error_message,
+            "turn_count": turn_count,
             "completed_at": datetime.utcnow().isoformat(),
         }).eq("id", run_id).execute()
 
@@ -238,6 +265,7 @@ class SupabaseLogger:
         goal_framing: str = "baseline",
         architecture: str = "react",
         scaffolding: str = "none",
+        taxonomy_version: int | None = None,
         completed_only: bool = True,
     ) -> bool:
         """
@@ -250,6 +278,7 @@ class SupabaseLogger:
             goal_framing: Goal framing condition
             architecture: Agent architecture
             scaffolding: Cognitive scaffolding
+            taxonomy_version: Benchmark taxonomy version (if None, matches any version)
             completed_only: If True, only count completed runs; if False, count any run
 
         Returns:
@@ -274,26 +303,36 @@ class SupabaseLogger:
         query = query.eq("architecture", architecture)
         query = query.eq("scaffolding", scaffolding)
         
+        if taxonomy_version is not None:
+            query = query.eq("taxonomy_version", taxonomy_version)
+        
         if completed_only:
             query = query.not_.is_("completed_at", "null")  # Only count completed runs
         
         result = query.execute()
         return len(result.data) > 0
 
-    def get_all_existing_runs(self, completed_only: bool = False) -> list[dict]:
+    def get_all_existing_runs(self, completed_only: bool = False, taxonomy_version: int | None = None) -> list[dict]:
         """
         Fetch all existing runs for batch deduplication.
         
-        Returns a list of dicts with: model_name, seed, goal_framing, architecture, scaffolding
+        Args:
+            completed_only: If True, only return completed runs
+            taxonomy_version: If specified, only return runs with this version
+        
+        Returns a list of dicts with: model_name, seed, goal_framing, architecture, scaffolding, taxonomy_version
         This is much faster than checking each run individually.
         """
         # Fetch all runs with their model info in one query
         query = self.client.table("runs").select(
-            "seed, goal_framing, architecture, scaffolding, completed_at, models!inner(name)"
+            "seed, goal_framing, architecture, scaffolding, taxonomy_version, completed_at, models!inner(name)"
         )
         
         if completed_only:
             query = query.not_.is_("completed_at", "null")
+        
+        if taxonomy_version is not None:
+            query = query.eq("taxonomy_version", taxonomy_version)
         
         result = query.execute()
         
@@ -306,6 +345,7 @@ class SupabaseLogger:
                 "goal_framing": row["goal_framing"],
                 "architecture": row["architecture"],
                 "scaffolding": row["scaffolding"],
+                "taxonomy_version": row.get("taxonomy_version", 1),
             })
         return runs
 

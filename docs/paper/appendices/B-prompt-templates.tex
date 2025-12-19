@@ -1,111 +1,183 @@
 \section{Prompt Templates}
 \label{app:prompts}
 
-We use structured tool calling with Claude's native \texttt{tool\_use} feature. The system prompt and observation format are shown below.
+We use structured tool calling for action output. The system prompt provides comprehensive game mechanics as a reference, while observations use structured markdown for efficient parsing.
 
 \subsection{System Prompt}
 
+The system prompt serves as a static reference document, providing all game mechanics in a scannable format with tables:
+
 \begin{verbatim}
-You are an AI agent running a lemonade stand business. 
-Your goal is to maximize profit over a 14-day summer season.
+# Lemonade Stand Challenge
 
-## Game Mechanics
+You run a lemonade stand for 14 days. **Goal: Maximize total profit.**
 
-**Weather Effects on Demand:**
-- HOT: Very high demand, customers willing to pay premium prices
-- SUNNY: High demand, good day for sales
-- CLOUDY: Moderate demand
-- RAINY: Low demand, few customers venture out
-- STORMY: Very low demand
+## Starting Conditions
+- Cash: $20.00
+- Inventory: 10 lemons, 5 sugar bags, 50 cups, 5 ice bags
+- Location: Park (free)
+- Reputation: 0.50 (neutral)
 
-**Pricing Strategy:**
-- Higher prices = fewer customers but more profit per sale
-- Lower prices = more customers but less profit per sale
-- The "sweet spot" is usually around $0.50-$1.00 depending on weather
+## Weather & Demand
 
-**Inventory:**
-- Lemons: $0.25 each, expire after 3 days
-- Sugar bags: $0.50 each, don't expire
-- Cups: $0.05 each, don't expire
-- Ice: $0.25/bag, melts overnight unless you have a cooler
+| Weather | Multiplier | Typical Price |
+|---------|------------|---------------|
+| HOT     | 1.8x       | $0.75-1.25    |
+| SUNNY   | 1.3x       | $0.60-1.00    |
+| CLOUDY  | 0.9x       | $0.50-0.80    |
+| RAINY   | 0.4x       | $0.40-0.60    |
+| STORMY  | 0.1x       | $0.25-0.50    |
 
-**Recipe per cup:**
-- 0.25 lemons (4 cups per lemon)
-- 0.1 sugar bags (10 cups per bag)
-- 0.2 ice bags (5 cups per bag) - optional but boosts hot day sales
+Temperature bonus: >85F adds +2%/degree. <60F halves demand.
 
-## Strategy Tips
-1. Watch the weather forecast to plan inventory
-2. Don't overbuy perishables (lemons, ice)
-3. Higher prices on hot/sunny days, lower on bad weather
-4. Build reputation by serving customers well
-5. Advertising helps on good weather days
+## Supplies & Recipe
+
+| Supply | Base Cost | Yield | Expires |
+|--------|-----------|-------|---------|
+| Lemon | $0.25 | 4 cups | 3 days |
+| Sugar | $0.50/bag | 10 cups | Never |
+| Cups | $0.05 | 1 cup | Never |
+| Ice | $0.25/bag | 5 cups | Overnight* |
+
+*Ice melts 100% overnight. With cooler upgrade: only 50% melts.
+
+**Cost per cup**: ~$0.18 (lemon + sugar + ice + cup)
+
+## Bulk Discounts (Auto-Applied)
+
+Just specify the quantity you want - the system automatically 
+applies the best bulk discount.
+
+| Supply | 10% off threshold | 20% off threshold |
+|--------|-------------------|-------------------|
+| Lemons | 12+ (Dozen) | 144+ (Crate) |
+| Sugar | 5+ (Case) | 20+ (Pallet) |
+| Cups | 50+ (Sleeve) | 250+ (Case) |
+| Ice | 5+ (Cooler Pack) | 20+ (Delivery) |
+
+**Example**: `buy_lemons=24` -> System buys 2 Dozens at 10% off = $5.40
+
+## Locations
+
+| Location | Permit | Traffic | Weather Exposure | Price Sensitivity |
+|----------|--------|---------|------------------|-------------------|
+| Park | Free | 1.0x | 1.0x (full) | Normal |
+| Downtown | $10 | 1.2x | 0.7x (sheltered) | Lower (premium OK) |
+| Mall | $15 | 0.7x | 0.0x (indoor) | Normal |
+| Pool | $2.50 | 0.8x | 1.5x (amplified) | Lower on hot days |
+
+## Upgrades
+- **Cooler** ($2.50): Ice melts 50% per night instead of 100%
+
+## Demand Formula
+`Customers = Foot_Traffic x Conversion_Rate`
+
+- **Foot Traffic**: base(50) x location x weather x reputation(0.5-1.5) x ads
+- **Conversion**: 95% at $0.50, drops with higher prices
+- **Ice Bonus**: +20% conversion on HOT/SUNNY if you have ice; -20% without
+
+## Reputation
+- Starts at 0.50, moves 20% toward daily satisfaction each day
+- Lower prices = happier customers
+- Turning away customers hurts satisfaction
+\end{verbatim}
+
+\paragraph{Goal-Framing Injection.} When goal-framing conditions are applied, the following section is appended to the system prompt:
+
+\begin{verbatim}
+## Your Approach
+[Goal-framing prompt text inserted here - see Appendix D]
 \end{verbatim}
 
 \subsection{Observation Format}
 
-Each turn, the agent receives a structured observation:
+Each turn, the agent receives a structured markdown observation. The format uses tables for efficient scanning and explicitly highlights expiring inventory:
 
 \begin{verbatim}
-# Day 3 Results
-
-## Current Conditions
-- Weather: HOT (98°F)
-- Tomorrow's Forecast: sunny
-- Days Remaining: 11
-
-## Finances
-- Cash: $24.50
-- Total Profit So Far: $4.50
+# Day 7 | HOT 98F -> sunny tomorrow
 
 ## Yesterday's Results
-- Cups Sold: 45
-- Revenue: $33.75
-- Costs: $8.25
-- Daily Profit: $25.50
-- Customers Served: 45
-- Customers Turned Away: 12
+- Sold: 30 cups @ $0.90 = $27.00 revenue
+- Costs: $18.75
+- **Profit: $+8.25**
+- Customers served: 30 | Turned away: 66
+- Ice melted overnight: 4.0 bags
 
-## Current Inventory
-- Lemons: 8 (expiring tomorrow: 3)
-- Sugar Bags: 4.5
-- Cups: 42
-- Ice Bags: 0
+## Current State
+| Cash | Total Profit | Reputation |
+|------|--------------|------------|
+| $35.40 | $15.40 | 0.68 |
 
-## Stand Status
+## Inventory
+| Item | Quantity | Expiring Tomorrow |
+|------|----------|-------------------|
+| Lemons | 13 | 13 (will spoil!) |
+| Sugar | 0.1 bags | - |
+| Cups | 21 | - |
+| Ice | 3 bags | - |
+
+## Status
 - Location: park
-- Owned Upgrades: None
-- Reputation: 0.58
+- Upgrades: cooler
+- Days remaining: 7
 \end{verbatim}
 
+On Day 1 (initial observation), the ``Yesterday's Results'' section is omitted since there are no prior results.
+
 \subsection{Action Tool Schema}
+
+Actions are submitted via structured tool calling. The agent specifies \emph{quantities} desired; the system automatically applies the optimal bulk discount tier:
 
 \begin{verbatim}
 {
   "name": "take_action",
+  "description": "Submit daily decisions: set price, buy supplies, 
+                  optionally advertise/upgrade/relocate.",
   "input_schema": {
     "type": "object",
     "properties": {
       "reasoning": {
         "type": "string",
-        "description": "Brief explanation of your strategy"
+        "description": "Brief explanation of your strategy (1-2 sentences)"
       },
       "price_per_cup": {
         "type": "integer",
         "description": "Price in cents (e.g., 75 = $0.75)"
       },
-      "buy_lemons": {"type": "integer", "default": 0},
-      "buy_sugar": {"type": "integer", "default": 0},
-      "buy_cups": {"type": "integer", "default": 0},
-      "buy_ice": {"type": "integer", "default": 0},
-      "advertising_spend": {"type": "integer", "default": 0},
+      "buy_lemons": {
+        "type": "integer",
+        "description": "Number of lemons to buy (bulk discounts auto-applied)",
+        "default": 0
+      },
+      "buy_sugar": {
+        "type": "integer",
+        "description": "Number of sugar bags to buy",
+        "default": 0
+      },
+      "buy_cups": {
+        "type": "integer",
+        "description": "Number of cups to buy",
+        "default": 0
+      },
+      "buy_ice": {
+        "type": "integer",
+        "description": "Number of ice bags to buy",
+        "default": 0
+      },
+      "advertising_spend": {
+        "type": "integer",
+        "description": "Amount in cents",
+        "default": 0
+      },
       "buy_upgrade": {
         "type": "string",
-        "enum": ["cooler", null]
+        "enum": ["cooler", null],
+        "default": null
       },
       "location": {
         "type": "string",
-        "enum": ["park", "downtown", "mall", "pool", null]
+        "enum": ["park", "downtown", "mall", "pool", null],
+        "default": null
       }
     },
     "required": ["reasoning", "price_per_cup"]
@@ -114,4 +186,17 @@ Each turn, the agent receives a structured observation:
 \end{verbatim}
 
 The \texttt{reasoning} field captures agent chain-of-thought, enabling qualitative analysis of decision-making patterns. All runs log the full conversation history, actions, and outcomes for post-hoc analysis.
+
+\subsection{Context Management}
+
+To handle long episodes within model context limits, we implement automatic conversation truncation:
+
+\begin{itemize}
+    \item \textbf{Threshold}: Truncation triggers at 70\% of model context limit
+    \item \textbf{Preservation}: First message (initial observation) and last 4 messages always retained
+    \item \textbf{Strategy}: Middle messages removed with a marker: ``[... N earlier messages truncated ...]''
+    \item \textbf{Token Estimation}: Approximately 4 characters per token heuristic
+\end{itemize}
+
+This ensures agents always have access to initial game context and recent conversation history, while preventing context overflow on models with smaller windows.
 

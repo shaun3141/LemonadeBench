@@ -125,3 +125,5 @@ export function getSelectedGoalName(selectedGoal: string | null): string | null 
   return goal?.name || selectedGoal;
 }
 
+
+

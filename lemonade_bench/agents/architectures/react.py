@@ -294,7 +294,17 @@ class ReactAgent(LemonadeAgent):
                     f"Agent exceeded maximum tool calls per turn ({self.MAX_TOOL_CALLS_PER_TURN})"
                 )
             
-            response = self._generate_response()
+            # After 5 optional tool calls, force the model to use take_action
+            # This prevents models from looping infinitely on helper tools
+            force_action = self._tool_calls_this_turn > 5 and self._tool_instances
+            
+            if force_action:
+                # Force take_action by only providing that tool
+                # Use _generate_response with explicit tool list to ensure token tracking
+                response = self._generate_response(tools=[LEMONADE_ACTION_TOOL])
+            else:
+                response = self._generate_response()
+            
             self.messages.append(self.provider.format_assistant_message(response))
             
             if response.tool_name == "take_action":

@@ -70,7 +70,7 @@ class OpenAIProvider(LLMProvider):
         self,
         model: str = "gpt-4o",
         api_key: str | None = None,
-        max_tokens: int = 1024,
+        max_tokens: int = 4096,
     ):
         """
         Initialize the OpenAI provider.
@@ -142,14 +142,34 @@ class OpenAIProvider(LLMProvider):
         )
         
         # Extract tool call
-        message = response.choices[0].message
+        choice = response.choices[0]
+        message = choice.message
+        finish_reason = choice.finish_reason
+        
+        # Check for truncation
+        if finish_reason == "length":
+            text_content = message.content
+            raise ValueError(
+                f"Response truncated (finish_reason=length) for model {self._model}. "
+                f"Consider increasing max_tokens. Partial content: {text_content[:200] if text_content else 'None'}..."
+            )
+        
         if not message.tool_calls:
-            raise ValueError("No tool call found in OpenAI response")
+            raise ValueError(
+                f"No tool call found in OpenAI response. finish_reason: {finish_reason}"
+            )
         
         tool_call = message.tool_calls[0]
         
-        # Parse arguments
-        tool_input = json.loads(tool_call.function.arguments)
+        # Parse arguments - handle None/empty arguments
+        args_str = tool_call.function.arguments
+        if args_str is None or args_str == "":
+            raise ValueError(
+                f"Tool call '{tool_call.function.name}' has empty arguments. "
+                f"This may indicate response truncation. finish_reason: {finish_reason}"
+            )
+        else:
+            tool_input = json.loads(args_str)
         
         # Extract usage
         usage = None

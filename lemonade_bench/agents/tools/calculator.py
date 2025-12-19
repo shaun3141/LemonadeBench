@@ -190,3 +190,5 @@ class CalculatorTool(Tool):
                 error=f"Calculation error: {e}"
             )
 
+
+

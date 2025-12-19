@@ -1,6 +1,9 @@
 # Clean test - different seed
 name: "Context Optimization Test - Clean"
 
+# Required: Benchmark taxonomy version
+taxonomy_version: 2
+
 models:
   - provider: anthropic
     name: claude-3-5-haiku-latest

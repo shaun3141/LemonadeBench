@@ -16,3 +16,5 @@ COMMENT ON COLUMN turns.is_error IS 'True if this turn was an invalid action att
 COMMENT ON COLUMN turns.error_messages IS 'Array of validation error messages if is_error is true';
 COMMENT ON COLUMN runs.error_count IS 'Total number of invalid action attempts in this run';
 
+
+

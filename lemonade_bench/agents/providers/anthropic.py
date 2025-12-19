@@ -53,7 +53,7 @@ class AnthropicProvider(LLMProvider):
         self,
         model: str = "claude-sonnet-4-20250514",
         api_key: str | None = None,
-        max_tokens: int = 1024,
+        max_tokens: int = 4096,
     ):
         """
         Initialize the Anthropic provider.

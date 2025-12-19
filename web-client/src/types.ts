@@ -200,6 +200,8 @@ export interface LeaderboardRun {
   final_reputation: number;
   turn_count: number;
   error_count?: number;
+  error_message?: string | null;
+  taxonomy_version?: number;
   started_at: string;
   completed_at: string | null;
 }

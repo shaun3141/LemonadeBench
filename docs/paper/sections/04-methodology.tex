@@ -51,7 +51,7 @@ Based on the ReAct framework \citep{yao2023react}, this is the simplest architec
 Before deciding, the agent is prompted to generate an explicit multi-day plan:
 \begin{quote}
 \small\ttfamily
-``Before taking action, first outline your strategy for the next 3-5 days. Consider: (1) the weather forecast, (2) your current inventory levels, (3) your cash position, (4) your reputation trajectory. Then decide today's action.''
+``Before taking action, create a strategic plan for the next 3-5 days: (1) Weather Outlook: What weather do you expect? How will it affect demand? (2) Inventory Needs: What supplies will you need? When should you buy them? (3) Pricing Strategy: What prices will work best for each weather condition? (4) Location Considerations: Should you consider changing location? (5) Key Risks: What could go wrong? How will you handle it? Output your plan, then decide today's action based on it.''
 \end{quote}
 This tests whether explicit planning improves long-horizon reasoning.
 
@@ -59,7 +59,7 @@ This tests whether explicit planning improves long-horizon reasoning.
 Inspired by Reflexion \citep{shinn2023reflexion}, after each action the agent receives its results and is prompted to reflect:
 \begin{quote}
 \small\ttfamily
-``Reflect on yesterday's results. What worked well? What could you have done better? What will you do differently going forward? Then decide today's action.''
+``Reflect on yesterday's results before making today's decision: (1) What Worked Well? What decisions led to positive outcomes? (2) What Could You Have Done Better? Where did you lose money or miss opportunities? (3) What Surprised You? Was demand higher or lower than expected? (4) What Will You Do Differently? How will you adjust your strategy? Use these insights to inform today's action.''
 \end{quote}
 This tests whether retrospective analysis improves learning within an episode.
 
@@ -72,16 +72,23 @@ Combines both planning and reflection phases, requiring three LLM calls per turn
 We also test whether providing explicit cognitive tools improves agent reasoning.
 
 \paragraph{Calculator Tool Access.}
-We provide an optional \texttt{calculate} tool that agents can invoke to perform arithmetic:
+We provide an optional \texttt{calculator} tool that agents can invoke to perform arithmetic:
 \begin{verbatim}
 {
-  "name": "calculate",
-  "description": "Evaluate a mathematical expression",
+  "name": "calculator",
+  "description": "Perform arithmetic calculations. Useful for computing 
+                  profit margins, break-even points, inventory costs, and 
+                  other business math. Supports +, -, *, /, //, %, ** operators.",
   "input_schema": {
     "type": "object",
     "properties": {
-      "expression": {"type": "string", "description": "Math expression, e.g., '(50 * 0.75) - (12 * 0.25)'"}
-    }
+      "expression": {
+        "type": "string", 
+        "description": "Mathematical expression to evaluate. Examples: 
+                        '100 * 0.75', '(500 - 200) / 500 * 100'"
+      }
+    },
+    "required": ["expression"]
   }
 }
 \end{verbatim}
@@ -92,25 +99,32 @@ This tests whether access to reliable computation improves decisions that requir
 Rather than providing a tool, we add prompting that encourages explicit calculation:
 \begin{quote}
 \small\ttfamily
-``Always show your math. Before setting a price, calculate: (1) your cost per cup, (2) expected demand at different price points, (3) projected profit. Write out the calculations step by step.''
+``Always show your math. Before setting a price, calculate: (1) Your cost per cup (lemons + sugar + cups + ice), (2) Expected demand at different price points given the weather, (3) Projected profit at your chosen price point. Write out the calculations step by step before making your final decision.''
 \end{quote}
 
 \paragraph{Code Interpreter Access.}
-For the most capable models, we provide a Python code execution tool:
+For the most capable models, we provide a sandboxed Python code execution tool:
 \begin{verbatim}
 {
   "name": "run_python",
-  "description": "Execute Python code and return the result",
+  "description": "Execute Python code for complex calculations, optimization, 
+                  or data analysis. Has access to math, numpy (as np), and 
+                  statistics modules.",
   "input_schema": {
     "type": "object",
     "properties": {
-      "code": {"type": "string", "description": "Python code to execute"}
-    }
+      "code": {
+        "type": "string", 
+        "description": "Python code to execute. Has access to: math, numpy 
+                        (np), statistics. Print results to see them."
+      }
+    },
+    "required": ["code"]
   }
 }
 \end{verbatim}
 
-This enables complex analyses like optimization over price points or Monte Carlo simulation of weather scenarios.
+This enables complex analyses like optimization over price points or Monte Carlo simulation of weather scenarios. The interpreter is sandboxed with AST validation, restricted builtins, and a 5-second timeout.
 
 \subsection{Experimental Matrix}
 \label{sec:matrix}
